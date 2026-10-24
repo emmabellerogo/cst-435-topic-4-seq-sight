@@ -1,143 +1,114 @@
-# Attend-It — Three-Cloud Template (LSTM + Attention Sequence Classifier)
+# Seq Sight — Temperature Forecasting with Attention Explanations
 
-> The same three-cloud architecture as the base template
-> (**Streamlit UI ⇄ FastAPI Model API ⇄ Supabase Data**), with the middle box
-> swapped for a **PyTorch LSTM + additive (Bahdanau) attention** doing sequence
-> classification with per-token explanations. The deploy steps are identical, so
-> follow the main [three-cloud TUTORIAL](../Topic_1_three-cloud/TUTORIAL.md).
+> **Status: planning / early development.** Seq Sight is not implemented yet.
+> No forecasting, training, API, or deployment works today. Everything under
+> "Planned" below is a goal, not a result.
 
-## Live deployment URLs (fill these in)
+## Project scope
+
+We chose **Variant A: hourly temperature forecasting** on the **Jena Climate**
+dataset, with a **24-hour forecast horizon**. We will compare an LSTM/GRU
+baseline against a model with a hand-written scaled-dot-product self-attention
+block, and expose attention weights so users can see which past hours influenced
+a forecast.
+
+**Customer story**
+
+> As a campus outdoor-events planner, I want a 24-hour temperature forecast and
+> a view of which past hours influenced it, so that I can plan events while
+> understanding the forecast's limitations.
+
+## What exists today vs. what is planned
+
+| | Existing: Attend-It starter | Planned: Seq Sight |
+|---|---|---|
+| Origin | Professor-provided template, added in commit `dae6272` | Our implementation for this assignment |
+| Task | Synthetic token-sequence classification | Hourly temperature forecasting (Jena Climate, 24 h horizon) |
+| Model | LSTM + additive (Bahdanau) attention | Separate LSTM/GRU baseline + hand-written scaled-dot-product self-attention model |
+| Status | Starter code, not yet adapted | Not started |
+
+**Attribution:** the three-cloud structure (Streamlit UI ⇄ FastAPI API ⇄
+Supabase) and the starter scaffolding come from the professor-provided
+*Attend-It* template for this course. We are adapting that scaffolding; the
+Seq Sight data, models, API contract, UI, and documentation are our own work
+unless noted otherwise. Starter files not yet replaced may still describe or
+implement Attend-It behavior.
+
+## Planned architecture
+
+```
+Streamlit (UI, thin client)  ⇄  FastAPI on Render (models, PyTorch)  ⇄  Supabase (Postgres)
+```
+
+The UI holds no ML code; the API is the only writer to Supabase.
+
+## Deployment links (placeholders — not deployed)
 
 | Tier | Platform | URL |
 |------|----------|-----|
-| **UI** | Streamlit Community Cloud | `https://<your-app>.streamlit.app` |
-| **API** | Render.com | `https://<your-api>.onrender.com` |
-| **Data** | Supabase | `https://<your-project-ref>.supabase.co` |
+| UI | Streamlit Community Cloud | _TBD_ |
+| API | Render | _TBD_ |
+| Data | Supabase | _TBD_ |
 
-> Replace the placeholders above with your real URLs once deployed.
+## Implementation checklist
 
----
+Nothing below has been verified complete.
 
-## What it does
+**Data and preprocessing**
+- [ ] Load Jena Climate hourly readings into Supabase using `db/load.py`
+- [ ] Define reproducible input windows and chronological train/validation/test splits; fit preprocessing on training data only
+- [ ] Create `sequences`, `runs`, and `predictions` tables; `predictions` stores input hash, forecast, attention weights, serving run ID, and creation timestamp
 
-Attend-It classifies short integer-token sequences into one of four classes
-(**synthetic**: `alpha`, `beta`, `gamma`, `delta`) with an LSTM + attention, and
-— crucially — returns the **per-timestep attention weights** that show *which
-token* the network relied on. Each sequence's class is decided by a single class
-marker placed right after a randomly-positioned trigger token, so a model that
-solves the task must learn to *attend* to that position — making the attention
-bar a genuine explanation. You pick the learning rate, batch size, and epochs;
-the API trains with Adam + cross-entropy, reports held-out **accuracy /
-macro-F1**, and persists every run. The UI lets you train, type or generate a
-sequence to classify, view the attention bar chart, review run history, and read
-the model card. Only the sequence's **sha256 hash** is logged — never the tokens.
+**Models and comparison**
+- [ ] Implement a separate PyTorch LSTM or GRU baseline
+- [ ] Implement a second model with a hand-written scaled-dot-product self-attention block (no `torch.nn.MultiheadAttention`)
+- [ ] Compare models with identical preprocessing, matched seeds and compute budgets, and persisted test MAE; generate the README comparison table with SQL
 
-## What changed from the base template (the reusable pattern in action)
+**API**
+- [ ] `POST /predict`, `POST /predict_batch`, `GET /predictions`, `GET /runs`, `GET /healthz`, `GET /version`
+- [ ] Input-length and dtype validation on prediction endpoints
 
-The three-cloud split and the file layout are identical to *Regress-It*. Only the
-middle box changed:
+**UI and explanations**
+- [ ] Six Streamlit tabs: Concepts, Try It, Baseline vs. Attention, Recent Predictions, Failure Gallery, Model Card
+- [ ] Worked numerical attention example explaining √d_k
+- [ ] Matplotlib attention heatmaps for at least three examples
+- [ ] Three confidently wrong attention-model forecasts, with discussion
 
-| Aspect | Regress-It | Attend-It |
-|--------|----------------------|---------------------|
-| Model | `nn.Linear(1,1)` + SGD | LSTM + additive attention + Adam |
-| Task | regression | multi-class sequence classification |
-| Metrics | MSE / MAE / R² | accuracy / macro-F1 |
-| Input | one scalar `x` | a sequence of token ids |
-| Explainability | — | **per-timestep attention weights** |
-| Extra endpoints | — | `/predict_sample`, `/classes` |
-| Privacy invariant | — | store sequence **hash**, never tokens |
-| Tables | datasets · runs · predictions | datasets · runs · **run_artifacts** · sequence_metadata |
+**Tests**
+- [ ] Input-length validation
+- [ ] Attention-matrix shape
+- [ ] Frozen reference input
+- [ ] Prediction logging linked to a run
+- [ ] Hand-written attention block
+- [ ] Shared preprocessing
 
-Everything else — UI as a thin client (no torch), API as the only writer,
-Supabase as the single source of truth, service-role vs anon keys, RLS on
-`runs`, the four test categories — is unchanged.
+**Deployment and documentation**
+- [ ] Deploy Streamlit, Render, and Supabase
+- [ ] Add CI
+- [ ] Handle API cold starts gracefully in the UI
+- [ ] Complete model card and dataset card
+- [ ] Explicit data-persistence/privacy statement
+- [ ] Uncertainty and risk disclosures
 
-## Architecture
+**Submission**
+- [ ] Each member's individual 3–5 minute video, 750–1000 word engineering report, and contribution evidence linked below
 
-```
-┌──────────────────────┐   HTTPS/JSON    ┌──────────────────────────┐   service-role   ┌──────────────────┐
-│  Streamlit Cloud     │ ──────────────► │  FastAPI on Render        │ ───────────────► │  Supabase        │
-│  (ui/app.py)         │   token seq     │  (api/main.py)            │   full access    │  Postgres        │
-│  thin client, no ML  │                 │  LSTM + attention (torch) │                  │  datasets/runs/  │
-│  plots attention bar │                 │                          │                  │  run_artifacts/  │
-│                      │ ◄────anon key,  │                          │                  │  sequence_       │
-│                      │   read-only ────┼──────────────────────────┼──────────────────►│  metadata        │
-└──────────────────────┘   SELECT runs   └──────────────────────────┘                  │  (RLS: anon can  │
-                                                                                        │   only SELECT    │
-                                                                                        │   runs)          │
-                                                                                        └──────────────────┘
-```
+## Model comparison
 
-## Project structure
+_Not yet available._ This table will be generated from persisted test MAE via SQL.
 
-```
-attend-it/
-├── README.md                 # This file
-├── MODEL_CARD.md             # Model details, attention, privacy, limitations
-├── shared/
-│   ├── schemas.py            # Pydantic API contract
-│   └── data.py               # Synthetic trigger-token sequence generator + class contract
-├── api/                      # FastAPI tier (deploys to Render)
-│   ├── main.py               # Endpoints
-│   ├── training.py           # LSTM + attention, artifact (de)serialization
-│   ├── db.py                 # Supabase (service-role) data access
-│   ├── configs/default.yaml
-│   └── requirements.txt
-├── ui/
-│   ├── app.py                # 5-tab thin client (type / generate + attention bar)
-│   ├── requirements.txt      # No torch
-│   └── .streamlit/secrets.toml.example
-├── db/
-│   ├── migrations/001_init.sql
-│   └── seed.py
-├── tests/                    # pytest suite
-├── render.yaml               # Render blueprint
-├── requirements-dev.txt
-└── .env.example
-```
+| Model | Test MAE |
+|-------|----------|
+| LSTM/GRU baseline | TBD |
+| Self-attention | TBD |
 
-## Quickstart (local)
+## Member deliverables
 
-```bash
-cd attend-it
+| Member | Video | Engineering report | Contribution evidence |
+|--------|-------|--------------------|-----------------------|
+| _TBD_ | _TBD_ | _TBD_ | _TBD_ |
 
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
+## AI-assistance log
 
-pytest -q            # tests pass; the live-Supabase test skips without creds
-
-cp .env.example .env                                   # API: SUPABASE_URL + SERVICE key
-cp ui/.streamlit/secrets.toml.example ui/.streamlit/secrets.toml
-
-uvicorn api.main:app --reload --port 8000              # terminal 1
-streamlit run ui/app.py                                # terminal 2
-```
-
-To deploy to the three clouds, follow **Part E** of the main
-[TUTORIAL](../Topic_1_three-cloud/TUTORIAL.md): apply
-`db/migrations/001_init.sql` in the Supabase SQL Editor → deploy the API from
-`render.yaml` on Render → deploy the UI on Streamlit Community Cloud.
-
-## API endpoints
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/datasets` | Register a synthetic sequence dataset (params only) |
-| `POST` | `/train` | Train the model, persist run + model artifact, return metrics |
-| `GET`  | `/runs/{run_id}` | Fetch one run |
-| `GET`  | `/runs` | List recent runs |
-| `POST` | `/predict` | Classify a token sequence; return attention; log the hash |
-| `POST` | `/predict_sample` | Generate + classify a sample; return attention |
-| `GET`  | `/classes` | The class labels the model predicts over |
-| `GET`  | `/healthz` | Liveness / DB ping |
-| `GET`  | `/version` | Build SHA + torch version |
-
-## Checklist
-
-- [ ] Three live URLs listed at the top of this README
-- [ ] `datasets`, `runs`, `run_artifacts`, `sequence_metadata` tables with RLS
-- [ ] 6+ API endpoints
-- [ ] 5 Streamlit tabs (Concepts, Train, Predict, Run History, Model Card)
-- [ ] Attention training with held-out accuracy / macro-F1 + per-token explanations
-- [ ] pytest suite passing
-- [ ] `MODEL_CARD.md` completed
+AI (Claude Code) helped review requirements and draft this documentation. A
+human must still review all AI-assisted content for accuracy before submission.
