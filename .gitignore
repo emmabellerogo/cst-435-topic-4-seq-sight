@@ -179,3 +179,7 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# Seq Sight: downloaded / generated dataset files (never commit the corpus)
+/data/raw/
+/data/interim/
+/data/processed/

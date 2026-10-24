@@ -1,9 +1,12 @@
 # Seq Sight — Data Design and Forecasting Contract
 
-> **Status: proposed design.** Every choice below is a team design decision, not
-> an assignment-mandated setting, and none of it is implemented or verified.
-> Items in [Unresolved verification items](#unresolved-verification-items) must
-> be checked and recorded before implementation begins.
+> **Status: proposed design.** Every *design choice* below (window sizes, split
+> ratios, cleanup rules, tables) is a team decision, not an assignment-mandated
+> setting, and none of it is implemented in application code.
+> **Dataset facts** (marked *Measured*) come from inspecting the downloaded files
+> on 2026-10-24; see the [dataset card](dataset-card.md) for evidence and for
+> what is source-documented vs. locally measured. Items still open are in
+> [Unresolved verification items](#unresolved-verification-items).
 
 Back to [README](../README.md).
 
@@ -45,7 +48,16 @@ not yet decided).
 - Windows are created **separately within each partition**, so neither inputs
   nor targets cross a partition boundary. (Some observations near boundaries
   therefore belong to no window; this is intended.)
-- Exact boundary timestamps are not yet defined; see verification items.
+- **Proposed method:** boundaries on the calendar-hour grid at 70% and 85% of
+  N = 193,760 hours (2003-11-24 17:00 – 2026-01-01 00:00 end-of-hour labels).
+- **Measured** on the files recorded in the dataset card (stride 1; a window is 96
+  consecutive valid hours inside one split):
+
+| Split | Hour labels (inclusive) | Windows |
+|-------|-------------------------|--------:|
+| Train | 2003-11-24 17:00 – 2019-05-16 00:00 | 134,678 |
+| Validation | 2019-05-16 01:00 – 2022-09-08 00:00 | 28,762 |
+| Test | 2022-09-08 01:00 – 2026-01-01 00:00 | 28,873 |
 
 ## Preprocessing
 
@@ -61,16 +73,33 @@ not yet decided).
 The LSTM/GRU baseline and the self-attention model must use identical data,
 windows, preprocessing, and evaluation. Only the model architecture differs.
 
-## Data validity rules
+## Data validity and cleanup rules
 
-Reject or flag, rather than silently repair:
+*Proposed rules* (checked by `scripts/inspect_jena.py` and its synthetic tests;
+no loader exists yet):
 
-- Timestamps that are unsorted or duplicated.
-- Temperatures that are non-numeric, NaN, or infinite.
-- Any window that would span a missing hour. Windows are not created across
-  gaps.
+1. **Sort** records by timestamp.
+2. **Collapse duplicate timestamps only when their temperatures agree; fail on
+   conflicting temperatures** (no silent choice).
+3. **Off-grid timestamps** (not a `:00/:10/…` minute with zero seconds) are
+   excluded from aggregation, never snapped, and reported.
+4. Temperatures must be finite numbers; the provider's `-9999` is treated as
+   missing (its meaning is undocumented).
+5. **Hourly value:** an hour labelled `H:00` is the mean of the six on-grid
+   10-minute records stamped `H-50 min … H:00` (source timestamps are
+   end-of-period). It is valid only if all six are present and valid; otherwise
+   it is an invalid hour.
+6. **No interpolation or filling.** Windows contain no invalid hours, so they
+   never span a gap.
 
-How gaps are handled beyond excluding such windows is undecided.
+*Measured on the downloaded data* (not design choices):
+
+- 478 duplicate rows, 0 conflicting (144 from a 2010 archive overlap, 334 repeated
+  rows inside archives); 2 off-grid timestamps; 8 out-of-order places.
+- 212 of 193,760 hourly-grid hours are invalid (193,548 valid).
+- Timestamps are naive station-clock values labelled `MEZ` by the provider. The
+  data are consistent with one clock offset all year, but the time zone and DST
+  semantics are **not established**, and they are never treated as UTC.
 
 ## Attention interpretation
 
@@ -101,10 +130,10 @@ fabricated or substituted. The UI should show "no attention for this model".
 
 ## Implementation checklist
 
-All unchecked; none verified.
+Checked items are complete and verified; unchecked items are not done.
 
-- [ ] Verify and record the dataset details listed below
-- [ ] Decide window stride and gap handling
+- [x] Inspect and record the dataset details (see [dataset card](dataset-card.md)); statistics reproduced by `scripts/inspect_jena.py`, with synthetic tests in `tests/test_inspect_jena.py`
+- [ ] Decide training window stride (cleanup and gap rules proposed above)
 - [ ] Load the hourly corpus into `sequences` with split labels
 - [ ] Implement shared preprocessing (train-only fit, reused for all splits and inference)
 - [ ] Implement per-partition window creation; test no window crosses a boundary or a missing hour
@@ -115,13 +144,18 @@ All unchecked; none verified.
 
 ## Unresolved verification items
 
-None of these has been verified; do not fill in from assumption.
+Done (see the [dataset card](dataset-card.md)): source and license (CC BY 4.0 per
+the provider's download page), retrieval record and per-file checksums, sampling
+frequency (10 minutes), proposed aggregation rule, split boundaries and window
+counts (measured).
 
-- [ ] Dataset acquisition: source, license, version/date retrieved
-- [ ] Source timestamp interpretation (time zone, UTC vs. local, daylight-saving behavior)
-- [ ] Source sampling frequency
-- [ ] Hourly aggregation method (e.g. subsample vs. mean), if the source is finer than hourly
-- [ ] Exact split boundary timestamps
-- [ ] Missing-data handling: how many gaps exist and what to do with them
-- [ ] Whether the 70/15/15 split and the 72→24 windows yield enough windows per partition
+Still open:
+
+- [ ] Timestamp semantics: `MEZ` is only the provider's label; fixed offset vs.
+  DST switching is **not documented and not established** by our checks
+- [ ] Meaning of `-9999` (548 temperature records in May 2007) — treated as missing
+- [ ] Why the files contain repeated rows and out-of-order records
+- [ ] Whether to restrict the date range instead of using all 2003–2026 data
+- [ ] Training window stride (stride 1 assumed only for the counts)
+- [ ] Whether other "Jena Climate" copies are the same subset
 - [ ] How the `[batch, 72, 72]` attention maps to the 24-hour forecast (model-head design)
