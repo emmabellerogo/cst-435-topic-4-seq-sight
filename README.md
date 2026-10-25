@@ -18,7 +18,7 @@ a forecast.
 > a view of which past hours influenced it, so that I can plan events while
 > understanding the forecast's limitations.
 
-**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md)
+**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md) · [Supabase setup (migration for review)](docs/supabase-setup.md)
 
 ## What exists today vs. what is planned
 

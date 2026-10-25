@@ -129,6 +129,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
@@ -183,3 +185,7 @@ cython_debug/
 /data/raw/
 /data/interim/
 /data/processed/
+
+# Streamlit secrets (only secrets.toml.example may be committed)
+secrets.toml
+.streamlit/secrets.toml
