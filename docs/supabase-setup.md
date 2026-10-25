@@ -8,10 +8,11 @@ Back to [README](../README.md) · See also [data design](data-design.md).
 |------|--------|----------|
 | `002` applied to the Supabase project | **Reported by the user** | Not independently observed by Claude |
 | RLS enabled, anon read-only grants, the two `SELECT` policies | **Reported by the user** as verified | Not independently observed; Claude has not connected to Supabase |
-| Corpus uploaded to `sequences` | **Not done** | No upload has been run |
+| Corpus uploaded to `sequences` | **Reported by the user** as uploaded and independently verified | Data version `jena-mpi-roof-h1-60138aac7d898b8c`: train 135,438 rows (2003-11-24 17:00 – 2019-05-16 00:00), validation 29,047 (2019-05-16 01:00 – 2022-09-08 00:00), test 29,063 (2022-09-08 01:00 – 2026-01-01 00:00). These match the local dry-run counts. Not independently observed by Claude, which has not connected to Supabase |
 | `db/load.py` dry-run on the real local files | **Executed locally** | Manifest and checksums verified; counts match the dataset card (see below) |
 | `tests/test_load.py` (synthetic preparation, splits, gaps, config, mocked upload/resume) | **Executed locally**: 43 tests pass together with `tests/test_inspect_jena.py` | `python3 -m unittest tests.test_load tests.test_inspect_jena` |
-| `db/load.py --upload` against real Supabase | **Untested** | Only exercised against an in-memory fake store |
+| `db/load.py --upload` against real Supabase | **Run by the user** (outcome reported above) | Claude only exercised it against an in-memory fake store |
+| `shared/forecasting.py`, `shared/forecast_store.py` (preprocessing, windows, paginated reader) | **Executed locally** against synthetic data and a mocked client | `python3 -m unittest tests.test_forecasting`; never run against real Supabase or the real corpus. See [forecasting preprocessing](forecasting-preprocessing.md) |
 | `db/validation/002_seq_sight_validation.sql` (constraint/FK/JSON behavior) | **Never run** | Needs a disposable local PostgreSQL, which is not installed here |
 | Constraint behavior of `002` (JSON `jsonpath` checks, composite FK, NaN rules) | **Untested** | Same reason |
 
@@ -177,7 +178,7 @@ plus every preparation setting (hour rule, 72/24, sentinel, split fractions,
 new corpora can coexist under `UNIQUE (data_version, station_ts)`. Current value:
 `jena-mpi-roof-h1-60138aac7d898b8c`.
 
-**Upload (later; not yet run).** Prerequisites: `pip install supabase`
+**Upload (run by the user; see Status).** Prerequisites: `pip install supabase`
 (pinned in [api/requirements.txt](../api/requirements.txt)), and a git-ignored
 `.env` made from [.env.example](../.env.example) with the real project URL and
 service-role key. Then:
