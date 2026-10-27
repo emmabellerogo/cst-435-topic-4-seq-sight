@@ -5,3 +5,8 @@ streamlit==1.38.0
 requests==2.32.3
 pandas==2.2.2
 supabase==2.7.4
+matplotlib==3.9.2
+# Transitive pin. streamlit==1.38.0 accepts any pyarrow>=7; pyarrow 26 (checked) refuses to import with
+# NumPy 1.x, which is what the shared dev environment pins (numpy==1.26.4). 17.0.0 imports and
+# round-trips arrays on NumPy 1.26.4 here; it is also compatible with NumPy 2 builds.
+pyarrow==17.0.0

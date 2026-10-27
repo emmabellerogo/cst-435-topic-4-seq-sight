@@ -331,7 +331,7 @@ database that only has `002`:
   [api/training.py](../api/training.py), [ui/app.py](../ui/app.py) and the tests
   (`tests/test_schema.py`, `tests/test_supabase_roundtrip.py`) assume the
   classification task.
-- [ui/.streamlit/secrets.toml.example](../ui/.streamlit/secrets.toml.example)
+- [.streamlit/secrets.toml.example](../.streamlit/secrets.toml.example)
   says the anon key reads only `runs`; it now also reads `predictions`.
 - [render.yaml](../render.yaml) still names the service `attend-it-api`.
 
