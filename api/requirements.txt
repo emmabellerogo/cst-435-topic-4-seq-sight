@@ -7,3 +7,8 @@ torch==2.4.1
 numpy==1.26.4
 supabase==2.7.4
 python-dotenv==1.0.1
+# Transitive pin (not a direct dependency). supabase==2.7.4 allows any realtime 2.x, but
+# recent realtime releases (2.33.0 checked) require pydantic>=2.11.7, which conflicts with pydantic==2.9.2 above.
+# 2.5.3 is the version pip's resolver selects for this file; pinning it keeps builds
+# reproducible. Remove it when supabase or pydantic is upgraded.
+realtime==2.5.3

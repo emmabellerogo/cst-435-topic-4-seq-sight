@@ -42,8 +42,10 @@ the head both the current state and the window-wide context. Pooling discards
 which input hour contributed what, which is why the attention matrix cannot be
 read as per-output attribution.
 
-ForecastHead (identical in both models): Linear(in -> head_hidden) -> ReLU ->
-Linear(head_hidden -> 24). Only the encoder differs, as the data design requires.
+ForecastHead: Linear(in -> head_hidden) -> ReLU -> Linear(head_hidden -> 24). The
+layer PATTERN and head_hidden match in both models, but the input width differs
+(hidden_size = 32 for the LSTM, 2 * d_model = 64 for attention), so the first head
+layer has different weights/parameters. The encoders differ as well.
 
 Equal parameter counts do NOT mean equal compute: attention costs O(T^2) in the
 sequence length and parallelizes over time, while the LSTM is O(T) but sequential.

@@ -1,6 +1,6 @@
 # Forecasting Models
 
-Back to [README](../README.md) · See also [data design](data-design.md) and [forecasting preprocessing](forecasting-preprocessing.md).
+Back to [README](../README.md) · See also [training workflow](forecasting-training.md), [data design](data-design.md) and [forecasting preprocessing](forecasting-preprocessing.md).
 
 Code: [shared/forecast_models.py](../shared/forecast_models.py). Tests:
 [tests/test_forecast_models.py](../tests/test_forecast_models.py). The classifier in
@@ -56,8 +56,11 @@ the history is legitimate. `build_model(model_type, **config)` and each model's
   (`Q,K,V` linear projections, `QKᵀ/√d_k`, softmax over keys; no
   `nn.MultiheadAttention`, `nn.Transformer` or functional SDPA), residual +
   LayerNorm, then pooling and the head.
-- **Head (identical in both):** `Linear(in→64) → ReLU → Linear(64→24)`, producing
-  all 24 hours at once (direct multi-horizon; no feeding forecasts back in).
+- **Head (same layer pattern, different input width):** `Linear(in→64) → ReLU →
+  Linear(64→24)`, producing all 24 hours at once (direct multi-horizon; no feeding
+  forecasts back in). `in` is 32 for the LSTM (final hidden state) and 64 for
+  attention (concatenated pooling), so the first head layer has different
+  parameters; the heads are not identical.
 - **Pooling:** concatenation of the last hour's contextualized vector and the mean
   over all 72 contextualized vectors (`[batch, 64]`). Each row after attention
   already mixes in information from all 72 hours. The last row is the position the

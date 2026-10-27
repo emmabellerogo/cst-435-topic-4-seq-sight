@@ -133,6 +133,7 @@ celerybeat.pid
 !.env.example
 .venv
 .venv312/
+artifacts/
 env/
 venv/
 ENV/
