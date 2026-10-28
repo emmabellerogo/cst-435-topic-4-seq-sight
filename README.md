@@ -81,7 +81,7 @@ Ticked only where the repository holds evidence. "Offline" = the local pytest su
 **Tests**
 - [x] Input-length validation
 - [x] Attention-matrix shape
-- [ ] Frozen reference input (a NumPy-reference test of the attention math exists; no frozen golden input/output file)
+- [x] Frozen reference input ([details](docs/frozen-reference.md)): a fixed synthetic 72 h input with stored expected forecasts. The check against the trained seed-0 artifacts passed locally but is skipped in CI (the artifacts are git-ignored); a separate untrained-model fixture runs in CI and is not verification of the trained checkpoints. Not yet seen in GitHub Actions
 - [ ] Prediction logging linked to a run (covered offline with an in-memory repository only; the live test is written and **not run**)
 - [x] Hand-written attention block (compared against a NumPy reference)
 - [x] Shared preprocessing (stored training scaler applied at inference; offline tests)
