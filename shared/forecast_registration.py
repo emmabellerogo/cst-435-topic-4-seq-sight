@@ -4,8 +4,8 @@ Pure planning is separated from writing. ``plan_registration`` only reads local
 artifact files. ``execute_registration`` takes an injected client and is called
 only by ``scripts/register_forecast_runs.py --execute``.
 
-``runs.test_mae_c`` is NOT NULL in the applied 002 schema, and the real test
-evaluation has not been run. A plan therefore carries ``test_mae_c = None`` until
+``runs.test_mae_c`` is NOT NULL in the applied 002 schema, and the measured value comes from the
+separate test-evaluation output. A plan therefore carries ``test_mae_c = None`` until
 a caller supplies measured values (``attach_test_mae``), and ``execute_registration``
 refuses any plan item whose value is missing. Nothing here ever substitutes zero,
 the validation MAE, or any other placeholder.

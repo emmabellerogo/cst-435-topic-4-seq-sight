@@ -60,7 +60,7 @@ Every forecast is written to `predictions` (input hash, forecast, attention, mod
 
 **Canonical input hash** (`seqsight-input-v1`): SHA-256 hex of the UTF-8 text `seqsight-input-v1|degC|72|v0,v1,…,v71`, each value a float64 written with Python `repr`, `-0.0` as `0.0`. `5` and `5.0` hash the same; the model type is not part of it. Raw inputs are never stored.
 
-## Run registration (not executed)
+## Run registration
 
 ```bash
 .venv312/bin/python scripts/register_forecast_runs.py            # dry-run (default): local files only
@@ -68,11 +68,11 @@ Every forecast is written to `predictions` (input hash, forecast, attention, mod
 
 Prints, for the six `artifacts/epoch50/final` artifacts, the `runs` fields (hyperparameters, scaler, compute budget, validation MAE, artifact hash) and the size of the `run_artifacts` payload.
 
-**Blocked on the final test evaluation.** `runs.test_mae_c` is `NOT NULL` and no test MAE exists yet (the artifacts hold validation metrics only). The command therefore reports `test_mae_c=MISSING`, and `--execute` refuses to run without `--test-mae-file`. It never inserts zero, a validation figure or any placeholder.
+`runs.test_mae_c` is `NOT NULL`, so `--execute` refuses to run without `--test-mae-file`, and without it the dry-run reports `test_mae_c=MISSING`. It never inserts zero, a validation figure or any placeholder. The final test evaluation has since been run (below), so the file now exists locally. The user reports that registration was executed and that persisted run metrics work in the deployed app; this was not observed from the repository.
 
-### Test evaluation (not run)
+### Test evaluation (run once)
 
-`scripts/evaluate_forecast_artifacts.py` scores the six fixed checkpoints on the test split. It loads trusted artifacts, never trains, fingerprints the weights before and after (aborting if they change), and reports all six without ranking or selecting. It is a dry-run by default (local files only). With `--execute` it reads the corpus through `shared/forecast_store.py`, refuses unless the corpus reproduces every artifact's data version and scaler, and creates `artifacts/epoch50/final/test_eval.json` exclusively: an existing file is never overwritten and there is no force flag. The file holds test MAE and persistence MAE (overall and per horizon), each artifact's file and weights SHA-256, the data version, and the evaluation configuration. Run it once, after the models to serve have been decided from validation results.
+`scripts/evaluate_forecast_artifacts.py` scores the six fixed checkpoints on the test split. It loads trusted artifacts, never trains, fingerprints the weights before and after (aborting if they change), and reports all six without ranking or selecting. It is a dry-run by default (local files only). With `--execute` it reads the corpus through `shared/forecast_store.py`, refuses unless the corpus reproduces every artifact's data version and scaler, and creates `artifacts/epoch50/final/test_eval.json` exclusively: an existing file is never overwritten and there is no force flag. The file holds test MAE and persistence MAE (overall and per horizon), each artifact's file and weights SHA-256, the data version, and the evaluation configuration. It was run once; its output `artifacts/epoch50/final/test_eval.json` (git-ignored, created 2026-10-28 06:47 UTC, 28,873 test windows) is the one on disk. Run it once, after the models to serve have been decided from validation results; the file cannot be overwritten.
 
 ```bash
 .venv312/bin/python scripts/evaluate_forecast_artifacts.py             # dry-run
@@ -87,7 +87,7 @@ The registration command accepts that file directly and rejects it if any artifa
 ```bash
 .venv312/bin/python -m pip install -r api/requirements.txt   # pinned; torch/numpy untouched
 .venv312/bin/python -m pytest tests/test_forecast_api.py
-# with real registration and credentials in .env, later:
+# with registered run ids and credentials in .env:
 FORECAST_LSTM_RUN_ID=<id> FORECAST_ATTENTION_RUN_ID=<id> .venv312/bin/python -m uvicorn api.main:app
 ```
 
@@ -97,4 +97,4 @@ Without run ids the server starts, `/healthz` returns 503 and prediction endpoin
 
 **Tested** (`tests/test_forecast_api.py`, synthetic untrained artifacts, in-memory fake repository, a fake Supabase client): validation, response shapes, scaler/eval-mode inference, hash format, logging and run linkage, batch success/422/207/503, pagination bounds, readiness reasons and recovery, registration mismatches, `/version` leaking no paths, registration planning/refusal/idempotency/cleanup, repository laziness and error sanitizing. The real seed-0 artifacts were also loaded and run once locally.
 
-**Not tested / remaining:** anything against a real Supabase (query shapes were checked only against a recording stub; the `predictions` JSON/foreign-key checks are untested end to end); the registration `--execute` path against the real database; executing the test evaluation (the script exists and is tested on synthetic data only); choosing the deployment models; Render deployment and the download-from-`run_artifacts` path (implemented and tested with mocks only; see [render-deployment.md](render-deployment.md)); `render.yaml` still describes Attend-It; concurrency and latency under load; response size of large batches (32 attention items ≈ 1.6 MB).
+**Not tested / remaining:** anything against a real Supabase (query shapes were checked only against a recording stub; the `predictions` JSON/foreign-key checks are untested end to end); the registration `--execute` path and the Render deployment with the download-from-`run_artifacts` path were exercised by the user (reported working) and are covered here only by mocks; see [render-deployment.md](render-deployment.md); concurrency and latency under load; response size of large batches (32 attention items ≈ 1.6 MB).

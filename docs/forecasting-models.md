@@ -85,7 +85,9 @@ reports should say "where the encoder's attention weights were", per
 the one most directly feeding the last-hour pooling path, but even that is not an
 attribution.
 
-## Proposed fair-training controls (not yet implemented)
+## Fair-training controls
+
+*Status note (2026-10-28): originally proposed before implementation; they are implemented in `shared/forecast_training.py` and were used for the six runs reviewed in [training-review.md](training-review.md).*
 
 Identical for both models, recorded in `runs`:
 

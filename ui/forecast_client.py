@@ -326,6 +326,11 @@ def validate_comparison_example(c: Any) -> Optional[str]:
     for k in ("title", "origin", "discussion"):
         if not isinstance(c.get(k), str) or not c[k].strip():
             return f"{k} is required"
+    if c.get("attention") is not None:
+        try:
+            parse_attention(c["attention"])
+        except ApiError:
+            return "attention must be 72x72"
     return None
 
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -268,9 +269,29 @@ def failure(**over):
     return c
 
 
-def test_shipped_examples_file_is_empty_and_valid():
-    ex = fc.load_examples((UI / "content" / "examples.json").read_text())
-    assert ex["comparison_examples"] == [] and ex["failure_cases"] == [] and ex["problems"] == []
+def test_shipped_examples_file_is_valid_complete_and_measured():
+    text = (UI / "content" / "examples.json").read_text()
+    ex = fc.load_examples(text)
+    assert ex["problems"] == [] and len(ex["comparison_examples"]) == 3 and len(ex["failure_cases"]) == 3
+    meta = json.loads(text)["_meta"]
+    assert meta["split"].startswith("validation") and "DELIBERATELY" in meta["purpose"]
+    origins = sorted(datetime.fromisoformat(c["origin"]) for c in ex["comparison_examples"] + ex["failure_cases"])
+    # six windows of 96 h each never overlap (the curation rule requires >= 168 h between origins)
+    assert all((b - a).total_seconds() >= 168 * 3600 for a, b in zip(origins, origins[1:]))
+    for c in ex["comparison_examples"]:
+        assert (c["lstm_run_id"], c["attention_run_id"]) == (1, 4)
+        for key, pred in (("lstm_mae_c", "lstm_predicted_c"), ("attention_mae_c", "attention_predicted_c")):
+            assert c[key] == pytest.approx(np.mean(np.abs(np.array(c[pred]) - c["actual_c"])), abs=1e-4)
+        assert len(c["lstm_artifact_sha256"]) == len(c["attention_artifact_sha256"]) == 64
+        assert c["input_provenance"]["split"] == "validation"
+        att = np.array(c["attention"])
+        assert att.shape == (72, 72) and np.allclose(att.sum(axis=1), 1.0, atol=1e-4)
+    for c in ex["failure_cases"]:
+        assert c["model_type"] == "attention" and c["run_id"] == 4 and c["mae_c"] >= 5.0
+        assert c["mae_c"] == pytest.approx(np.mean(np.abs(np.array(c["predicted_c"]) - c["actual_c"])), abs=1e-4)
+        att = np.array(c["attention"])
+        assert att.shape == (72, 72) and np.allclose(att.sum(axis=1), 1.0, atol=1e-4)
+        assert "no calibrated confidence" in c["discussion"] and "does not represent average performance" in c["discussion"]
 
 
 def test_examples_validation_drops_incomplete_entries():
@@ -282,6 +303,8 @@ def test_examples_validation_drops_incomplete_entries():
     ex = fc.load_examples(json.dumps(data))
     assert len(ex["comparison_examples"]) == 1 and len(ex["failure_cases"]) == 1
     assert len(ex["problems"]) == 6
+    bad_att = fc.load_examples(json.dumps({"comparison_examples": [{**comp, "attention": [[1.0]]}]}))
+    assert bad_att["comparison_examples"] == [] and bad_att["problems"]
     assert fc.load_examples("{bad")["problems"] and fc.load_examples(None)["failure_cases"] == []
 
 
@@ -320,4 +343,14 @@ def test_app_renders_six_tabs_without_secrets():
                                           "Failure Gallery", "Model Card"]
     text = " ".join(e.value for els in (at.markdown, at.info, at.warning, at.error) for e in els)
     assert "Predictions work only after" in text
-    assert "0 of 3 documented failures" in text and "0 of 3 measured comparison examples" in text
+    assert "deliberately shows the attention model's largest validation errors" in text
+    assert "0 of 3 documented failures" not in text and "0 of 3 measured comparison examples" not in text
+
+
+def test_app_renders_attention_heatmap_for_each_comparison_example():
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(UI / "app.py"), default_timeout=60).run()
+    assert not at.exception
+    captions = [c.value for c in at.caption]
+    assert sum("not an attribution of any forecast hour" in c for c in captions) == 3
+    assert sum("Input-to-input attention; not an explanation of the error." in c for c in captions) == 3

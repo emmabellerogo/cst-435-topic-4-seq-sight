@@ -23,11 +23,11 @@
 ## Metrics
 - Metric: mean absolute error in °C over all windows and all 24 hours.
 - *(validation)* persistence reference 3.53 °C; LSTM about 1.84 °C and self-attention about 1.91 °C (means of three seeds), so at this training budget the LSTM was lower on every seed. This is a validation result for one period and untuned settings, not a general ranking.
-- **Status:** training and validation are complete for the documented 50-epoch experiments (three seeds per model). The **final test evaluation has not been run**.
-- **Test MAE: pending.** It is computed once by a separate evaluation script and then stored in the `runs` table; the app's Baseline vs. Attention tab reads it from there.
+- **Status:** training and validation are complete for the documented 50-epoch experiments (three seeds per model), and the one-time final test evaluation has been run.
+- *(test, 28,873 windows; recorded in the git-ignored local file `artifacts/epoch50/final/test_eval.json`, created 2026-10-28 06:47 UTC)* persistence 3.415 °C; LSTM seeds 1.873 / 1.873 / 1.861 °C; self-attention seeds 1.953 / 1.951 / 1.931 °C (means 1.869 and 1.945 °C). Test figures are for reporting; no checkpoint was chosen from them. That the same values are stored in the Supabase `runs` table was reported by the user and has not been independently observed from this repository.
 
 ## Uncertainty
-- The models output a single value per hour. **There are no prediction intervals and no calibrated confidence.** Error by forecast horizon has not yet been reported in a reproducible, saved form, so no per-horizon figures are given here; individual errors can be much larger than any average.
+- The models output a single value per hour. **There are no prediction intervals and no calibrated confidence.** Per-horizon test errors are saved in the local `test_eval.json` but are not reproduced here. Individual errors can be much larger than any average (see the curated failure cases below).
 - Attention weights are **not** a confidence measure: sharply concentrated attention does not mean a forecast is more likely to be right.
 
 ## What the attention matrix is
@@ -39,10 +39,13 @@ Entry (i, j) says how much the encoder's representation of input hour *i* draws 
 - Forecasts use temperature history only: no pressure, humidity, wind, cloud or numerical weather prediction, so fronts and weather changes are largely unforeseeable.
 - Inputs must be real hourly means in °C; the models do not detect wrong units, gaps or sensor faults.
 
+## Curated examples and failure cases
+`ui/content/examples.json` holds three comparison examples and three failure cases, all from **validation** windows, produced by `scripts/curate_forecast_examples.py` (rules in [docs/forecasting-examples.md](docs/forecasting-examples.md)). The failure cases are **deliberately the attention model's largest validation errors** (window MAE of about 10 to 11 °C); they do not represent average performance (validation MAE about 1.92 °C). Each shows a large error from a model that displays no uncertainty. That is not the same as measured overconfidence, because the models have no calibrated confidence to be wrong about. Concentrated attention and a single deterministic forecast are not confidence measures.
+
 ## Persistence and privacy
 - Every served forecast is stored in Supabase `predictions`: the **SHA-256 hash of the input** (not the input), the 24 forecast values, the 72×72 attention matrix for the attention model, the model type, the serving run id and a timestamp. No user identifier, IP address or raw input is stored.
 - **That table is publicly readable** with the project's anon key, which ships with the app. A hash does not make an input private: it can be recomputed from a guessed input. Do not enter data that must stay confidential.
-- **Current state:** model weights are saved only as local files on the development machine. Registering runs and artifacts in Supabase (`runs`, `run_artifacts`) is pending, so run registration and artifact storage have not been tested against live Supabase. (The schema, permissions and corpus upload were verified by the user.)
+- **Current state (user-reported):** the user reports that runs and artifacts are registered in Supabase and that the deployed Streamlit → Render → Supabase flow works: forecasts, attention heatmaps, prediction history and persisted run metrics. This was not independently observed from this repository (no live access was used). Local weight files remain under the git-ignored `artifacts/`. The examples below use the seed-0 LSTM (run 1) and seed-0 attention (run 4) as reported by the user; the artifact hashes were checked locally.
 - Design: weights go in `run_artifacts`, which the anon key cannot read, and the service-role key is used only by the API server.
 
 ## Ethical considerations

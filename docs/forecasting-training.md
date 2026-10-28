@@ -64,7 +64,9 @@ batch-order hashes), best epoch, parameter count and torch version.
 a test confirms predictions (and attention weights) are bit-identical after a
 round trip. Load only artifacts you produced locally. `artifacts/` is git-ignored.
 
-## Commands (prepared, NOT yet run)
+## Commands
+
+*Status note (2026-10-28): these were written before training. The six 50-epoch Supabase-sourced runs in `artifacts/epoch50/final` were later executed (see [training-review.md](training-review.md)) and the one-time test evaluation was run through `scripts/evaluate_forecast_artifacts.py`; the `<BUDGET>` placeholders below are left as originally written.*
 
 All use `.venv312` from the repo root.
 

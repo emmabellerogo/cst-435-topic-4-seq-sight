@@ -2,7 +2,7 @@
 
 Artifact paths default to the seed-0 runs under ``artifacts/epoch50/final``. That
 is a DEVELOPMENT default only: it is not a final deployment selection (the
-final choice waits for the pending test evaluation).
+run ids actually served are set explicitly in the deployment environment).
 
 Run ids have NO default. Each served artifact must be explicitly mapped to the
 database run that records it; an unmapped artifact is never served.

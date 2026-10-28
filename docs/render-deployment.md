@@ -52,7 +52,7 @@ Run ids are never guessed or chosen automatically: unset means "not ready, `run_
 
 ## Artifact flow (supabase source)
 
-1. Registration (separate, explicit, not yet run; see [forecasting-api.md](forecasting-api.md)) inserts a `runs` row whose `hyperparameters.artifact_sha256` is the SHA-256 of the artifact file, and a `run_artifacts` row with the file base64-encoded. `run_artifacts` is not readable with the anon key.
+1. Registration (separate and explicit; reported by the user as done, see [forecasting-api.md](forecasting-api.md)) inserts a `runs` row whose `hyperparameters.artifact_sha256` is the SHA-256 of the artifact file, and a `run_artifacts` row with the file base64-encoded. `run_artifacts` is not readable with the anon key.
 2. At startup the service reads the run row for each configured run id, takes the expected SHA-256 from it, and (unless a valid cached copy exists) reads `run_artifacts.model_b64`.
 3. The bytes are decoded strictly and hashed **before** anything is written. A mismatch discards them (`artifact_hash_mismatch`). A verified file is written atomically (temp file, mode 0600, rename) to the cache. A cached file is re-hashed on every use; a mismatching one is deleted and fetched again.
 4. The file is then loaded by the existing `weights_only=True` loader, and the run row is checked against the artifact (model type, data version, seed, scaler, validation MAE, artifact hash). Only then is that model type ready.
@@ -61,7 +61,7 @@ Failures carry reason codes only (no paths, URLs or database messages): `run_id_
 
 **Network and retry policy.** Every Supabase call has a 20 s timeout. Startup runs in a background thread so the port opens immediately; until it finishes, `/healthz` reports `starting` and predictions return 503 `starting`. Failed or pending types are retried lazily on `/healthz` and prediction requests, at most once per `FORECAST_RETRY_COOLDOWN_S` (default 30 s), so Render's frequent health checks cannot hammer the database. There is no retry loop and no background poller. The cache is ephemeral (free tier): every cold start re-downloads two files of roughly 60 KB each (base64 ≈ 59 KB and 66 KB for the current artifacts).
 
-## Health checks while registration is pending
+## Health checks before registration
 
 Two endpoints, deliberately different:
 
@@ -74,9 +74,9 @@ Why the platform check is `/livez`: if Render's check hit `/healthz`, a deploy m
 
 On the free plan the service spins down after 15 minutes idle and wakes on the next request; Render documents about one minute (not measured here). On wake: process starts, torch and the app import, the port opens, the startup thread fetches and verifies the artifacts (one run lookup and one artifact read per model, each ≤ 20 s). During this window the UI sees timeouts or 502/503 (it reports a possible cold start and offers a bounded "Check API status" poll), then `/healthz` 503 `starting`, then 200. If the database was unreachable at start, models stay `database_unavailable` and recover on the first `/healthz` or prediction after the cooldown, without a restart. If a run is registered or its env var is set *after* deploy, adding the run id variables is expected to restart the service (Render normally applies environment changes by redeploying or restarting; that was not confirmed in the pages read), after which the pending models load.
 
-## Exact future steps (nothing below has been done)
+## Deployment steps (as planned; the user reports the deployed flow works, which was not independently observed)
 
-Prerequisites: models trained (done); **final test evaluation** run once (`scripts/evaluate_forecast_artifacts.py --execute`); models to serve chosen from *validation* results; registration executed (`scripts/register_forecast_runs.py --execute --test-mae-file ...`) and its run ids noted.
+Prerequisites: models trained (done); **final test evaluation** run once (done: local `test_eval.json`); models to serve chosen from *validation* results; registration executed (`scripts/register_forecast_runs.py --execute --test-mae-file ...`; user-reported) and its run ids noted (the user reports LSTM run 1 and attention run 4).
 
 1. Review `render.yaml`; push the branch you intend to deploy (this work is uncommitted).
 2. Render dashboard → **New → Blueprint** → select the repository and branch → Render reads `render.yaml`.

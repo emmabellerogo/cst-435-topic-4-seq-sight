@@ -264,6 +264,17 @@ with compare_tab:
         st.markdown(f"**{ex['title']}** — origin {ex['origin']} (runs {ex['lstm_run_id']} / {ex['attention_run_id']})")
         st.pyplot(fp.comparison_figure(ex["history_c"], ex["actual_c"], ex["lstm_predicted_c"],
                                        ex["attention_predicted_c"]), clear_figure=True)
+        if ex.get("attention") is not None:
+            st.pyplot(fp.attention_figure(fc.parse_attention(ex["attention"]),
+                                          title="Attention model (run %s): encoder self-attention for this input" % ex["attention_run_id"]),
+                      clear_figure=True)
+            st.caption("Input-to-input attention weights of the attention model for this 72 h history (row i = the hour "
+                       "attending, column j = the hour attended to). They are not an attribution of any forecast hour to "
+                       "input hours, not an explanation of the forecast, and not a confidence measure.")
+        if ex.get("lstm_mae_c") is not None and ex.get("attention_mae_c") is not None:
+            st.caption(f"MAE over these 24 hours: LSTM {ex['lstm_mae_c']:.2f} °C, attention {ex['attention_mae_c']:.2f} °C. "
+                       "One validation window, not a ranking of the models. Artifact SHA-256 (prefix): "
+                       f"LSTM {str(ex.get('lstm_artifact_sha256', ''))[:12]}, attention {str(ex.get('attention_artifact_sha256', ''))[:12]}.")
         st.markdown(ex["discussion"])
     for p in examples["problems"]:
         st.caption(f"⚠️ {p}")
@@ -315,6 +326,10 @@ with failure_tab:
     st.markdown("Cases where a model's forecast was far from what actually happened, with discussion. "
                 "These models give **no calibrated confidence**; a forecast being wrong says nothing about how "
                 "sure the model looked, and concentrated attention is not confidence.")
+    st.warning("This gallery deliberately shows the attention model's largest validation errors (selection rule in "
+               "`docs/forecasting-examples.md`). It does not represent average performance, and the examples were "
+               "selected by error size, not drawn at random. Because neither model displays uncertainty, these are "
+               "large errors from a model that shows no uncertainty, not measured overconfidence.")
     cases = examples["failure_cases"]
     if len(cases) < 3:
         st.info(f"Pending: {len(cases)} of 3 documented failures. Cases are added only after they are measured "
@@ -327,6 +342,9 @@ with failure_tab:
         errs = [abs(a - p) for a, p in zip(c["actual_c"], c["predicted_c"])]
         st.caption(f"Mean absolute error for this window: {sum(errs) / len(errs):.2f} °C; "
                    f"largest hourly error: {max(errs):.2f} °C.")
+        if c.get("lstm_mae_c") is not None:
+            st.caption(f"LSTM (run {c.get('lstm_run_id')}) on the same window: {c['lstm_mae_c']:.2f} °C. "
+                       f"Validation window; artifact SHA-256 (prefix) {str(c.get('artifact_sha256', ''))[:12]}.")
         if c.get("attention") is not None:
             st.pyplot(fp.attention_figure(fc.parse_attention(c["attention"])), clear_figure=True)
             st.caption("Input-to-input attention; not an explanation of the error.")

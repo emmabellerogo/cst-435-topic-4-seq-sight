@@ -4,6 +4,8 @@ Back to [README](../README.md) · See also [training workflow](forecasting-train
 
 Reviewed 2026-10-25; **revision 2**. Analysis only: nothing was retrained, the test split was not evaluated, no credentials were read, no Supabase connection was made, and no model or training code was changed. Section 8 lists options for further work; **none has been run**.
 
+> **Update 2026-10-28 (later events; the analysis below is unchanged).** The one-time test evaluation of these six artifacts was subsequently run and saved to the git-ignored local file `artifacts/epoch50/final/test_eval.json`; that answers the open question in *Scope* below. The user reports that runs and artifacts were then registered in Supabase and the deployed app works; this was not independently observed. Seed-0 LSTM (run 1) and seed-0 attention (run 4) are the ones used for the curated examples ([forecasting-examples.md](forecasting-examples.md)).
+
 ## What changed from revision 1
 
 Revision 1 called these runs a "pilot", said "none has converged", recommended rerunning everything with a new protocol, and attributed timing differences to machine load. Those points are withdrawn or reworded:
