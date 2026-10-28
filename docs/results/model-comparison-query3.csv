@@ -1,0 +1,7 @@
+model_type,seed,artifact_sha256_prefix,runs_found,run_ids
+attention,0,82c51854a590,1,"[""4""]"
+attention,1,6e5a88f34c70,1,"[""5""]"
+attention,2,8170cfcf232a,1,"[""6""]"
+lstm,0,de0af50530a4,1,"[""1""]"
+lstm,1,a628f4361a64,1,"[""2""]"
+lstm,2,b731633de140,1,"[""3""]"

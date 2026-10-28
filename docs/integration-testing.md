@@ -6,13 +6,14 @@ Back to [README](../README.md) · See also [forecasting API](forecasting-api.md)
 
 | Item | Status |
 |---|---|
-| Offline suite (`pytest`) | **Run locally** in `.venv312` (see Checks run at the end of the change). No network. |
+| Offline suite (`pytest`) | **Run locally** in `.venv312`: passes (one expected skip, the live test). No network. |
 | Offline tests of the integration helpers (config gating, exact-row cleanup, response/row/run comparison) | **Run locally**, against the in-memory repository and synthetic artifacts |
 | `tests/test_supabase_integration.py` against a real Supabase project | **NOT run.** It is skipped without configuration. A skip is not a verification; nothing here shows the live path works |
-| GitHub Actions workflows (`.github/workflows/ci.yml`, `integration.yml`) | **NOT run.** YAML was parsed locally only. Linux dependency resolution, the CPU torch install and the Actions syntax are untested until the first real run |
-| `docs/model-comparison.sql` | **NOT executed.** Static checks only (read-only, scoped hashes); PostgreSQL syntax unverified until you run it |
+| `ci.yml` (offline CI) | **Reported green by the user** (not independently observed by Claude) |
+| `integration.yml` (manual live job) | **NOT run.** YAML was parsed locally only; the `supabase-integration` Environment and its secrets are the user's to create |
+| `docs/model-comparison.sql` | **Executed by the user** in the production project; outputs transcribed in [results/](results/README.md). Claude only ran static checks (read-only, scoped hashes) |
 
-The user separately reports that the deployed Streamlit → Render → Supabase flow works; that is not a result of this test.
+The user separately reports that the deployed Streamlit → Render → Supabase flow works (manual checks); that is not a result of this test, and green offline CI is not live verification either.
 
 ## What the integration test does
 

@@ -4,7 +4,7 @@ Back to [README](../README.md) · See also [training workflow](forecasting-train
 
 Reviewed 2026-10-25; **revision 2**. Analysis only: nothing was retrained, the test split was not evaluated, no credentials were read, no Supabase connection was made, and no model or training code was changed. Section 8 lists options for further work; **none has been run**.
 
-> **Update 2026-10-28 (later events; the analysis below is unchanged).** The one-time test evaluation of these six artifacts was subsequently run and saved to the git-ignored local file `artifacts/epoch50/final/test_eval.json`; that answers the open question in *Scope* below. The user reports that runs and artifacts were then registered in Supabase and the deployed app works; this was not independently observed. Seed-0 LSTM (run 1) and seed-0 attention (run 4) are the ones used for the curated examples ([forecasting-examples.md](forecasting-examples.md)).
+> **Update 2026-10-28 (later events; the analysis below is unchanged).** The one-time test evaluation of these six artifacts was subsequently run and saved to the git-ignored local file `artifacts/epoch50/final/test_eval.json`; that answers the open question in *Scope* below. The user reports that runs and artifacts were then registered in Supabase and the deployed app works; this was not independently observed. The user reports that Artzi approved the existing training approach. The user also ran the comparison SQL; mean test MAE over the three seeds was 1.8689 °C (LSTM) and 1.9452 °C (attention), see [results/](results/README.md). Seed-0 LSTM (run 1) and seed-0 attention (run 4) are the ones used for the curated examples ([forecasting-examples.md](forecasting-examples.md)).
 
 ## What changed from revision 1
 
@@ -174,7 +174,10 @@ For every seed the per-epoch SHA-256 of the batch index sequence is **identical 
 
 Equal epochs and equal optimizer steps establish a **matched optimization budget**: the same number of parameter updates on the same data in the same order. They do **not** establish equal compute.
 
-- **Arithmetic differs.** From the architecture sizes (my approximate count, ignoring layer norm, softmax and elementwise work): about 0.31 M multiply-accumulates per window forward for the LSTM and about 0.56 M for attention, so roughly 1.8× more for attention. Parameter counts (within 11%) say little about either.
+- **Arithmetic differs (an approximate, method-dependent estimate, not a measurement).** Counting only matrix-multiply multiply-accumulates (MACs) of one forward pass per window, with T = 72, LSTM hidden 32, d_model 32, head hidden 64, 24 outputs, and ignoring biases, layer norm, softmax, activations and the backward pass:
+  - LSTM: 4 gates × 32 × (1 + 32) = 4,224 per time step × 72 = 304,128, plus head 32×64 + 64×24 = 3,584, total **307,712**.
+  - Attention: input projection 72×32 = 2,304; Q, K, V 3 × 72 × 32 × 32 = 221,184; scores QKᵀ 72 × 72 × 32 = 165,888; weights × V 165,888; head 64×64 + 64×24 = 5,632; total **560,896**.
+  - The ratio is about 1.8 under these assumptions. A different counting convention (FLOPs, including the elementwise work, the backward pass, or hardware efficiency) would give a different ratio. This is **not measured compute and not wall-clock time**; measured times are reported separately below and were not controlled. Parameter counts (within 11%) say little about either.
 - **Measured time differs, and is not a controlled benchmark.** The runs below produced bit-identical results to their longer counterparts yet took different times:
 
 | Run (seed 0) | Median train seconds per epoch |
