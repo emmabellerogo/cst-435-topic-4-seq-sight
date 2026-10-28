@@ -1,6 +1,6 @@
 # Model Card — Seq Sight
 
-> Status: draft for review. Test-set results do not exist yet; nothing below reports a test figure. Facts marked *(validation)* come from the validation split only. The user verified the Supabase schema, access permissions, corpus upload and split counts. Model registration, artifact retrieval, forecast serving and prediction logging have not been tested against live Supabase. The UI was opened locally; deployed services remain untested.
+> Status: draft for review by the contributor. Facts marked *(validation)* come from the validation split; *(test)* figures come from the one-time final test evaluation. The user verified the Supabase schema, access permissions, corpus upload and split counts. The user reports that run registration, artifact retrieval, forecast serving and prediction logging work in the deployed system, and that an opt-in live integration test passed on 2026-10-28 (2 passed, run from a local terminal against the existing project with LSTM run 1 and attention run 4; see [docs/integration-testing.md](docs/integration-testing.md)). These are user-reported results that Claude did not observe.
 
 ## Model details
 - **Task:** forecast hourly air temperature (°C) for the next **24 hours** from the previous **72 hours**.
@@ -9,7 +9,7 @@
   - **Self-attention:** input projection + sinusoidal positions → one head of hand-written scaled dot-product self-attention, `softmax(QKᵀ/√d_k)V`, with residual + LayerNorm → last-hour and mean pooling → the same head pattern, with different input widths (64 vs. 32). 9,016 parameters.
 - **Training:** Adam, lr 1e-3, batch 128, L1 loss on standardized values, gradient clipping 1.0, 50 epochs, checkpoint chosen by validation MAE. Three seeds per model. Untuned initial settings.
 - **Framework:** PyTorch, run only in the FastAPI service. The UI contains no model code.
-- **Owner:** the Seq Sight team (add names). Adapted from the professor-provided Attend-It template for the three-cloud structure; the data, models and logic are our own.
+- **Owner:** Emma Rogoveanu (sole contributor). Adapted from the professor-provided Attend-It template for the three-cloud structure; the data, models and logic are the contributor's assignment work, with documented AI assistance (see the README).
 
 ## Intended use
 - A teaching and analysis demonstration of recurrent versus attention-based forecasting, with the attention matrix shown for inspection.
@@ -45,7 +45,7 @@ Entry (i, j) says how much the encoder's representation of input hour *i* draws 
 ## Persistence and privacy
 - Every served forecast is stored in Supabase `predictions`: the **SHA-256 hash of the input** (not the input), the 24 forecast values, the 72×72 attention matrix for the attention model, the model type, the serving run id and a timestamp. No user identifier, IP address or raw input is stored.
 - **That table is publicly readable** with the project's anon key, which ships with the app. A hash does not make an input private: it can be recomputed from a guessed input. Do not enter data that must stay confidential.
-- **Current state (user-reported):** the user reports that runs and artifacts are registered in Supabase and that the deployed Streamlit → Render → Supabase flow works: forecasts, attention heatmaps, prediction history and persisted run metrics. This was not independently observed from this repository (no live access was used). Local weight files remain under the git-ignored `artifacts/`. The examples below use the seed-0 LSTM (run 1) and seed-0 attention (run 4) as reported by the user; the artifact hashes were checked locally.
+- **Current state (user-reported):** the user reports that runs and artifacts are registered in Supabase and that the deployed Streamlit → Render → Supabase flow works: forecasts, attention heatmaps, prediction history and persisted run metrics. The live integration test (user-executed 2026-10-28, 2 passed) checked both model types against the stored `predictions` and `runs` rows; none of this was independently observed from this repository (no live access was used). Local weight files remain under the git-ignored `artifacts/`. The examples below use the seed-0 LSTM (run 1) and seed-0 attention (run 4) as reported by the user; the artifact hashes were checked locally.
 - Design: weights go in `run_artifacts`, which the anon key cannot read, and the service-role key is used only by the API server.
 
 ## Ethical considerations

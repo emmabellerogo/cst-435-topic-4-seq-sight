@@ -186,7 +186,7 @@ course project.
 
 The data is environmental measurements and contains no personal data.
 User-submitted forecast inputs are a separate matter; see the project's privacy
-statement (not yet written).
+statement (see the persistence and privacy section of the [model card](../MODEL_CARD.md)).
 
 ## Remaining open items
 

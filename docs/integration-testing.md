@@ -8,12 +8,23 @@ Back to [README](../README.md) · See also [forecasting API](forecasting-api.md)
 |---|---|
 | Offline suite (`pytest`) | **Run locally** in `.venv312`: passes (one expected skip, the live test). No network. |
 | Offline tests of the integration helpers (config gating, exact-row cleanup, response/row/run comparison) | **Run locally**, against the in-memory repository and synthetic artifacts |
-| `tests/test_supabase_integration.py` against a real Supabase project | **NOT run.** It is skipped without configuration. A skip is not a verification; nothing here shows the live path works |
-| `ci.yml` (offline CI) | **Reported green by the user** (not independently observed by Claude) |
-| `integration.yml` (manual live job) | **NOT run.** YAML was parsed locally only; the `supabase-integration` Environment and its secrets are the user's to create |
+| `tests/test_supabase_integration.py` against a real Supabase project | **Run by the user on 2026-10-28: 2 passed in 5.36 s** (user-reported; see [Live run record](#live-run-record-user-executed)). Separate evidence from CI, where it is skipped |
+| `ci.yml` (offline CI) | **Reported green by the user** (not independently observed by Claude). It never contacts Supabase and skips the live test, so it is not live verification |
+| `integration.yml` (manual live job) | **Not run.** The user ran the live test from a local terminal instead; this workflow's YAML was only parsed locally |
 | `docs/model-comparison.sql` | **Executed by the user** in the production project; outputs transcribed in [results/](results/README.md). Claude only ran static checks (read-only, scoped hashes) |
 
-The user separately reports that the deployed Streamlit → Render → Supabase flow works (manual checks); that is not a result of this test, and green offline CI is not live verification either.
+The user also reports that the deployed Streamlit → Render → Supabase flow works (manual checks, including the stored attention-heatmap drilldown); those manual checks and the green offline CI are separate evidence from the live test below.
+
+## Live run record (user-executed)
+
+Reported by the user; Claude did not observe the run, see its output, or contact Supabase.
+
+* **Date and result:** 2026-10-28, the live integration test completed with **2 passed in 5.36 seconds** (the lstm and attention cases).
+* **Verified (as reported):** for both model types, the `POST /predict` response was compared with the stored `predictions` row and its associated `runs` row (forecast, input hash, model type, serving run), and the rows the test created were cleaned up.
+* **Where and against what (user-stated):** from the user's **local Mac terminal**, not GitHub Actions, against the **existing Seq Sight Supabase project** (not a separate test project, which this document recommends), using the registered **LSTM run 1** and **attention run 4**. Both cases passed, and the predictions the test created were cleaned up. The cleanup removes only the rows the test itself inserted, so previously stored predictions in that project are not part of the cleanup.
+* **Not recorded:** the test's console output. (The existing project's reference, `vrcdwzypcqkpxetunnxm`, is user-confirmed in the README.)
+* **Optional checks not claimed:** any repeat run, a leftover-row audit beyond the test's own cleanup, or load and cold-start timing.
+* **Separation:** the routine CI skips described below (the live module is skipped in `ci.yml`) are expected and are not this live result.
 
 ## What the integration test does
 
