@@ -1,0 +1,2181 @@
+## AI Assistance Session — 2
+
+**Date and time:** October 24, 2026
+**Tool:** Claude
+**Project:** Seq Sight
+
+
+### Transcript
+
+
+/clear
+session1
+Continue Seq Sight in /Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight.
+
+A new Supabase project has been created. No SQL migrations have been applied.
+
+Read README.md, docs/data-design.md, docs/dataset-card.md, and the existing migration and database code.
+
+Prepare the forecasting database migration for review. Do not connect to Supabase, execute SQL, upload data, commit, or push.
+
+Requirements:
+- Preserve the professor’s original migration unchanged.
+- Create a separate Seq Sight migration and clearly document exactly which migration files to apply to this fresh project. Avoid requiring the obsolete classification schema.
+- Create sequences for the hourly corpus, with data-version identifier, station timestamp, temperature in °C, and train/validation/test split. Preserve naive station timestamps without silently converting to UTC. Enforce uniqueness by data version and timestamp.
+- Create runs with model type (lstm or attention), data version, seed, hyperparameters, preprocessing metadata, compute-budget metadata, validation/test metrics, and creation timestamp. Support the 72-hour input and 24-hour output contract.
+- Create predictions with input hash, 24-value forecast, nullable attention matrix, served_by_run_id foreign key, and creation timestamp. Baseline attention must be NULL. Preserve prediction history rather than deleting it when a run is removed.
+- Use appropriate constraints and indexes. Validate forecast and attention JSON structure where practical.
+- Enable RLS on every new table. Anonymous clients may read runs and predictions for the required UI history, but cannot insert, update, or delete. Corpus access and writes remain server-side. Do not expose model artifacts, credentials, or unnecessary internal metadata through public read access; use restricted views or separate tables where appropriate.
+- Document that an anonymous read policy makes those fields publicly readable; hashes do not make forecasts private.
+- Add a placeholder-only .env.example for the backend and ensure actual .env files and Streamlit secrets.toml files are ignored. Never read, print, or generate real credentials.
+- Add docs/supabase-setup.md with the exact migration to review and apply, expected tables, and read-only SQL checks for columns, foreign keys, RLS, grants, and policies.
+- Explain that the existing starter application is not yet compatible with the new schema.
+
+Keep this change focused on SQL, configuration examples, and setup documentation. Do not build the loader or change application behavior yet.
+
+Finish by listing changed files, explaining the schema choices and public-access boundaries, and reporting checks actually performed.
+Show more
+Bash
+IN
+git ls-files | grep -v '^data/' | head -80 && cat .gitignore && cat README.md && cat docs/data-design.md docs/dataset-card.md && ls ai-documentation
+
+OUT
+.gitattributes
+.gitignore
+MODEL_CARD.md
+README.md
+api/__init__.py
+api/configs/default.yaml
+api/db.py
+api/main.py
+api/requirements.txt
+api/training.py
+db/migrations/001_init.sql
+db/seed.py
+docs/data-design.md
+docs/dataset-card.md
+docs/jena-mpi-roof-checksums.txt
+render.yaml
+requirements-dev.txt
+scripts/inspect_jena.py
+shared/__init__.py
+shared/data.py
+shared/schemas.py
+tests/__init__.py
+tests/conftest.py
+tests/test_healthz.py
+tests/test_inspect_jena.py
+tests/test_schema.py
+tests/test_supabase_roundtrip.py
+tests/test_training.py
+ui/.streamlit/secrets.toml.example
+ui/app.py
+ui/requirements.txt
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# UV
+#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#uv.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+#poetry.lock
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#pdm.lock
+#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   in version control.
+#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
+#  and can be added to the global gitignore or merged into this file.  For a more nuclear
+#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
+#.idea/
+
+# Ruff stuff:
+.ruff_cache/
+
+# PyPI configuration file
+.pypirc
+
+# Cursor
+#  Cursor is an AI-powered code editor.`.cursorignore` specifies files/directories to
+#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
+#  refer to https://docs.cursor.com/context/ignore-files
+.cursorignore
+.cursorindexingignore
+# Seq Sight: downloaded / generated dataset files (never commit the corpus)
+/data/raw/
+/data/interim/
+/data/processed/
+# Seq Sight — Temperature Forecasting with Attention Explanations
+
+> **Status: planning / early development.** Seq Sight is not implemented yet.
+> No forecasting, training, API, or deployment works today. Everything under
+> "Planned" below is a goal, not a result.
+
+## Project scope
+
+We chose **Variant A: hourly temperature forecasting** on the **Jena Climate**
+dataset, with a **24-hour forecast horizon**. We will compare an LSTM/GRU
+baseline against a model with a hand-written scaled-dot-product self-attention
+block, and expose attention weights so users can see which past hours influenced
+a forecast.
+
+**Customer story**
+
+> As a campus outdoor-events planner, I want a 24-hour temperature forecast and
+> a view of which past hours influenced it, so that I can plan events while
+> understanding the forecast's limitations.
+
+**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md)
+
+## What exists today vs. what is planned
+
+| | Existing: Attend-It starter | Planned: Seq Sight |
+|---|---|---|
+| Origin | Professor-provided template, added in commit `dae6272` | Our implementation for this assignment |
+| Task | Synthetic token-sequence classification | Hourly temperature forecasting (Jena Climate, 24 h horizon) |
+| Model | LSTM + additive (Bahdanau) attention | Separate LSTM/GRU baseline + hand-written scaled-dot-product self-attention model |
+| Status | Starter code, not yet adapted | Not started |
+
+**Attribution:** the three-cloud structure (Streamlit UI ⇄ FastAPI API ⇄
+Supabase) and the starter scaffolding come from the professor-provided
+*Attend-It* template for this course. We are adapting that scaffolding; the
+Seq Sight data, models, API contract, UI, and documentation are our own work
+unless noted otherwise. Starter files not yet replaced may still describe or
+implement Attend-It behavior.
+
+## Planned architecture
+
+```
+Streamlit (UI, thin client)  ⇄  FastAPI on Render (models, PyTorch)  ⇄  Supabase (Postgres)
+```
+
+The UI holds no ML code; the API is the only writer to Supabase.
+
+## Deployment links (placeholders — not deployed)
+
+| Tier | Platform | URL |
+|------|----------|-----|
+| UI | Streamlit Community Cloud | _TBD_ |
+| API | Render | _TBD_ |
+| Data | Supabase | _TBD_ |
+
+## Implementation checklist
+
+Nothing below has been verified complete.
+
+**Data and preprocessing**
+- [ ] Load Jena Climate hourly readings into Supabase using `db/load.py`
+- [ ] Define reproducible input windows and chronological train/validation/test splits; fit preprocessing on training data only
+- [ ] Create `sequences`, `runs`, and `predictions` tables; `predictions` stores input hash, forecast, attention weights, serving run ID, and creation timestamp
+
+**Models and comparison**
+- [ ] Implement a separate PyTorch LSTM or GRU baseline
+- [ ] Implement a second model with a hand-written scaled-dot-product self-attention block (no `torch.nn.MultiheadAttention`)
+- [ ] Compare models with identical preprocessing, matched seeds and compute budgets, and persisted test MAE; generate the README comparison table with SQL
+
+**API**
+- [ ] `POST /predict`, `POST /predict_batch`, `GET /predictions`, `GET /runs`, `GET /healthz`, `GET /version`
+- [ ] Input-length and dtype validation on prediction endpoints
+
+**UI and explanations**
+- [ ] Six Streamlit tabs: Concepts, Try It, Baseline vs. Attention, Recent Predictions, Failure Gallery, Model Card
+- [ ] Worked numerical attention example explaining √d_k
+- [ ] Matplotlib attention heatmaps for at least three examples
+- [ ] Three confidently wrong attention-model forecasts, with discussion
+
+**Tests**
+- [ ] Input-length validation
+- [ ] Attention-matrix shape
+- [ ] Frozen reference input
+- [ ] Prediction logging linked to a run
+- [ ] Hand-written attention block
+- [ ] Shared preprocessing
+
+**Deployment and documentation**
+- [ ] Deploy Streamlit, Render, and Supabase
+- [ ] Add CI
+- [ ] Handle API cold starts gracefully in the UI
+- [ ] Complete model card and dataset card
+- [ ] Explicit data-persistence/privacy statement
+- [ ] Uncertainty and risk disclosures
+
+**Submission**
+- [ ] Each member's individual 3–5 minute video, 750–1000 word engineering report, and contribution evidence linked below
+
+## Model comparison
+
+_Not yet available._ This table will be generated from persisted test MAE via SQL.
+
+| Model | Test MAE |
+|-------|----------|
+| LSTM/GRU baseline | TBD |
+| Self-attention | TBD |
+
+## Member deliverables
+
+| Member | Video | Engineering report | Contribution evidence |
+|--------|-------|--------------------|-----------------------|
+| _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+
+## AI-assistance log
+
+AI (Claude Code) helped review requirements and draft this documentation. A
+human must still review all AI-assisted content for accuracy before submission.
+# Seq Sight — Data Design and Forecasting Contract
+
+> **Status: proposed design.** Every *design choice* below (window sizes, split
+> ratios, cleanup rules, tables) is a team decision, not an assignment-mandated
+> setting, and none of it is implemented in application code.
+> **Dataset facts** (marked *Measured*) come from inspecting the downloaded files
+> on 2026-10-24; see the [dataset card](dataset-card.md) for evidence and for
+> what is source-documented vs. locally measured. Items still open are in
+> [Unresolved verification items](#unresolved-verification-items).
+
+Back to [README](../README.md).
+
+## Scope
+
+- **Variant A:** hourly temperature forecasting on the Jena Climate dataset.
+- **Initial feature:** temperature in °C only (single input feature).
+- **Intended use:** an educational demo of attention-based forecasting. Jena
+  historical weather is not a validated local campus weather service, and
+  forecasts must not be presented as one.
+
+## Forecasting contract
+
+| Item | Proposed value |
+|------|----------------|
+| Input | 72 consecutive hourly temperature observations |
+| Target | The following 24 hourly temperatures, predicted together |
+| Input shape | `[batch, 72, 1]` |
+| Forecast shape | `[batch, 24]` |
+| Loss / metric | MAE reported in °C after inverse-transforming forecasts |
+
+### Timeline example
+
+For a window whose first input hour is `t0` (hours indexed from 0):
+
+```
+hour:    t0 ........................ t0+71 | t0+72 ........ t0+95
+         |<------- 72-hour input -------->|<-- 24-hour target -->|
+shape:            [72, 1]                          [24]
+```
+
+The input covers hours `t0 … t0+71`. The target is `t0+72 … t0+95`, entirely
+after the input. The next window starts at `t0+1` if stride 1 is used (stride is
+not yet decided).
+
+## Splits
+
+- Chronological partitions: **70% train, 15% validation, 15% test**.
+- Windows are created **separately within each partition**, so neither inputs
+  nor targets cross a partition boundary. (Some observations near boundaries
+  therefore belong to no window; this is intended.)
+- **Proposed method:** boundaries on the calendar-hour grid at 70% and 85% of
+  N = 193,760 hours (2003-11-24 17:00 – 2026-01-01 00:00 end-of-hour labels).
+- **Measured** on the files recorded in the dataset card (stride 1; a window is 96
+  consecutive valid hours inside one split):
+
+| Split | Hour labels (inclusive) | Windows |
+|-------|-------------------------|--------:|
+| Train | 2003-11-24 17:00 – 2019-05-16 00:00 | 134,678 |
+| Validation | 2019-05-16 01:00 – 2022-09-08 00:00 | 28,762 |
+| Test | 2022-09-08 01:00 – 2026-01-01 00:00 | 28,873 |
+
+## Preprocessing
+
+- Fit standardization (mean, standard deviation) on **training observations
+  only**.
+- Reuse those parameters unchanged for validation, test, and inference.
+- Inverse-transform forecasts before computing MAE, so errors are in °C.
+- Persist the fitted parameters with the data version so inference uses the same
+  values.
+
+## Fair comparison
+
+The LSTM/GRU baseline and the self-attention model must use identical data,
+windows, preprocessing, and evaluation. Only the model architecture differs.
+
+## Data validity and cleanup rules
+
+*Proposed rules* (checked by `scripts/inspect_jena.py` and its synthetic tests;
+no loader exists yet):
+
+1. **Sort** records by timestamp.
+2. **Collapse duplicate timestamps only when their temperatures agree; fail on
+   conflicting temperatures** (no silent choice).
+3. **Off-grid timestamps** (not a `:00/:10/…` minute with zero seconds) are
+   excluded from aggregation, never snapped, and reported.
+4. Temperatures must be finite numbers; the provider's `-9999` is treated as
+   missing (its meaning is undocumented).
+5. **Hourly value:** an hour labelled `H:00` is the mean of the six on-grid
+   10-minute records stamped `H-50 min … H:00` (source timestamps are
+   end-of-period). It is valid only if all six are present and valid; otherwise
+   it is an invalid hour.
+6. **No interpolation or filling.** Windows contain no invalid hours, so they
+   never span a gap.
+
+*Measured on the downloaded data* (not design choices):
+
+- 478 duplicate rows, 0 conflicting (144 from a 2010 archive overlap, 334 repeated
+  rows inside archives); 2 off-grid timestamps; 8 out-of-order places.
+- 212 of 193,760 hourly-grid hours are invalid (193,548 valid).
+- Timestamps are naive station-clock values labelled `MEZ` by the provider. The
+  data are consistent with one clock offset all year, but the time zone and DST
+  semantics are **not established**, and they are never treated as UTC.
+
+## Attention interpretation
+
+For a single self-attention head over 72 input hours, the attention matrix has
+shape `[batch, 72, 72]`. It describes relationships among **input hours**. It is:
+
+- **not** automatically a separate attribution for each of the 24 forecast
+  hours (the mapping from this matrix to the forecast depends on the model
+  design, e.g. pooling, which is not yet chosen), and
+- **not** proof of causality.
+
+UI and reports should describe it as "where the model's attention weights were
+concentrated", not "why the temperature will be X".
+
+## Planned database responsibilities
+
+Table and column names are provisional.
+
+| Table | Responsibility |
+|-------|----------------|
+| `sequences` | Hourly corpus: timestamp, temperature value, split (train/validation/test) |
+| `runs` | Model type, seed, hyperparameters, preprocessing/data-version metadata (including standardization parameters), compute-budget information, evaluation metrics (e.g. test MAE) |
+| `predictions` | Input hash, 24-hour forecast, attention matrix where applicable, serving run (foreign key to `runs`), creation timestamp |
+
+**Recurrent baseline:** it has no attention matrix. Its `predictions` rows store
+the attention field as `NULL` (or equivalent "not applicable"); no weights are
+fabricated or substituted. The UI should show "no attention for this model".
+
+## Implementation checklist
+
+Checked items are complete and verified; unchecked items are not done.
+
+- [x] Inspect and record the dataset details (see [dataset card](dataset-card.md)); statistics reproduced by `scripts/inspect_jena.py`, with synthetic tests in `tests/test_inspect_jena.py`
+- [ ] Decide training window stride (cleanup and gap rules proposed above)
+- [ ] Load the hourly corpus into `sequences` with split labels
+- [ ] Implement shared preprocessing (train-only fit, reused for all splits and inference)
+- [ ] Implement per-partition window creation; test no window crosses a boundary or a missing hour
+- [ ] Test shapes: input `[batch, 72, 1]`, forecast `[batch, 24]`, attention `[batch, 72, 72]`
+- [ ] Implement both models against the same data pipeline
+- [ ] Persist run metadata and test MAE in °C
+- [ ] Persist predictions with `NULL` attention for the baseline
+
+## Unresolved verification items
+
+Done (see the [dataset card](dataset-card.md)): source and license (CC BY 4.0 per
+the provider's download page), retrieval record and per-file checksums, sampling
+frequency (10 minutes), proposed aggregation rule, split boundaries and window
+counts (measured).
+
+Still open:
+
+- [ ] Timestamp semantics: `MEZ` is only the provider's label; fixed offset vs.
+  DST switching is **not documented and not established** by our checks
+- [ ] Meaning of `-9999` (548 temperature records in May 2007) — treated as missing
+- [ ] Why the files contain repeated rows and out-of-order records
+- [ ] Whether to restrict the date range instead of using all 2003–2026 data
+- [ ] Training window stride (stride 1 assumed only for the counts)
+- [ ] Whether other "Jena Climate" copies are the same subset
+- [ ] How the `[batch, 72, 72]` attention maps to the 24-hour forecast (model-head design)
+# Dataset Card — Jena Weather Station Data (Beutenberg `mpi_roof`)
+
+Back to [README](../README.md) · See also [data design](data-design.md).
+
+Facts are labelled by origin:
+
+- **[Source]** stated in the provider's own documentation.
+- **[Measured]** observed by us on the files we downloaded, using
+  [scripts/inspect_jena.py](../scripts/inspect_jena.py) (stdlib only).
+- **[Undocumented]** not stated by the provider; we do not assume it.
+
+## Source
+
+Provider: Max Planck Institute for Biogeochemistry (MPI-BGC), Jena. The
+station-page contact listed by the provider is Tarek El-Madany.
+
+| What | Link |
+|------|------|
+| Weather station landing page | <https://www.bgc-jena.mpg.de/wetter/> |
+| Download page (files + terms of use) | <https://www.bgc-jena.mpg.de/wetter/weather_data.html> |
+| Station documentation (English PDF) | <https://www.bgc-jena.mpg.de/wetter/Weatherstation.pdf> |
+| Example file | <https://www.bgc-jena.mpg.de/wetter/data/mpi_roof_2009a.zip> (same pattern for all files) |
+
+We use the **Beutenberg campus roof station, file prefix `mpi_roof`**. The
+provider also publishes a Saaleaue station (`mpi_saale`) and soil beds
+(`MPI_Soil`); we do not use them. We did not verify any other copy or mirror of
+the data, and we have not confirmed that this is the same subset as other
+"Jena Climate" copies found elsewhere.
+
+## Verified from the source documentation
+
+- **[Source]** Files are ZIP archives of CSV files, one per half-year until 2023
+  and one per full year from 2024. The download page lists `mpi_roof` files from
+  `mpi_roof_2003b.zip` (24.11.2003 – 31.12.2003) through `mpi_roof_2025.zip`, plus
+  a rolling `mpi_roof.zip` ("01.01.2026 up to today").
+- **[Source]** Sensors are scanned every 10 seconds; the datalogger stores
+  **10-minute averages, totals and maxima**.
+- **[Source]** CSV conventions: comma-separated, dot decimal, German
+  `dd.mm.yyyy` dates. The header column for time is labelled `(MEZ)`.
+- **[Source]** "The timestamp represents the end of the averaging period."
+- **[Source]** `T` is **air temperature in °C** (header `T (degC)`); other
+  columns include pressure, potential temperature, dew point, relative
+  humidity, wind, rain, radiation, CO2.
+- **[Source]** The logger clock is synchronised to a time server via the
+  collecting computer.
+- **[Source]** The download page states the terms of use as **Creative Commons
+  CC-BY-4.0** ("Terms of Use (as per Creative Commons CC-BY-4.0)"). Using it
+  requires attribution to the provider. The page gives no specific citation
+  format.
+
+## Retrieval record
+
+- Retrieved: **2026-10-24**, from the URLs above, 43 `mpi_roof_*.zip` files
+  (`2003b`, `2004a` … `2023b`, `2024`, `2025`). The rolling current-year
+  `mpi_roof.zip` was **deliberately not used** because it changes daily.
+- Stored in `data/raw/mpi_roof/` (git-ignored; the corpus is not committed).
+- Per-file manifest (filename, full SHA-256, data-row count on every line):
+  [jena-mpi-roof-checksums.txt](jena-mpi-roof-checksums.txt), generated from the
+  local files by `scripts/inspect_jena.py --write-manifest`. We independently
+  re-checked all 43 lines with `shasum -a 256` and `unzip -p … | wc` row counts;
+  row counts sum to 1,162,360.
+- Digest of the full checksum list (`shasum -a 256 *.zip | shasum -a 256`):
+  `0e3d8cd57dbc6f4ad85c3fffd5a97de318da77d03bc2c4a1dc2434e026da599e`
+- All 43 archives passed `unzip -t`. The scripts read CSV members as text; no
+  code from the download was executed.
+- Provider documentation snapshots (also local only):
+  `Weatherstation.pdf` SHA-256 `d8e9e728…14a08e2`,
+  `weather_data.html` SHA-256 `66e62b59…8846a9f`. The PDF's embedded creation
+  date is 2025-02-05.
+
+## Measured on the downloaded files
+
+| Property | Result |
+|----------|--------|
+| Rows (all files) | 1,162,360 |
+| Unique timestamps | 1,161,882 |
+| First / last timestamp | 2003-11-24 16:00:00 / 2026-01-01 00:00:00 |
+| Columns | 21 in 9 files, 22 in 34 files; `Date Time`, `p (mbar)`, `T (degC)` are the first three in every file |
+| Timestamp format | `dd.mm.yyyy HH:MM:SS` (the provider's example omits seconds) |
+| Header encoding | Not valid UTF-8 (non-ASCII bytes in unit labels); we decode with replacement and match columns by ASCII names |
+| Sampling | 10 minutes, on the grid `:00, :10, …, :50` |
+| Off-grid timestamps | 2 unique timestamps: `2004-12-07 02:00:30` and `2005-01-28 20:10:20`. Their on-grid slots (`02:00:00`, `20:10:00`) are also present as separate records |
+| Duplicate rows | 478 extra rows, none with conflicting temperature. **144** are a one-day overlap between `mpi_roof_2010a` and `mpi_roof_2010b` (archives share 2010-07-01 00:10 – 2010-07-02 00:00). **334** are repeated rows inside one archive, concentrated on 2014-03-20/21 (183), 2023-10-20/21 (143) and a few single dates in 2020 and 2022 |
+| Out-of-order records | 8 places where a timestamp does not increase (`2010a`→`2010b`, `2014a`, `2020a`, `2022a` ×3, `2022b`, `2023b`); 4 of them are an immediate repeat of the same timestamp, 3 step back by 20 minutes to 1 day, and 1 is the 2010 archive overlap |
+| `T` unparseable / NaN / infinite | 0 |
+| `T = -9999` sentinel | **548** records, all in one episode: 2007-05-17 15:10 – 2007-05-21 10:20 |
+| `T` range (excluding sentinel) | −23.01 °C … 37.95 °C; none outside −40…45 °C |
+| On-grid 10-minute slots | Expected 1,162,561 (first to last on-grid timestamp); **present 1,161,880** (unique, on-grid only); **absent 681**. Off-grid timestamps are not counted as present |
+| Gaps between on-grid records | 10 gaps larger than 10 min. Largest: 2016-10-25 10:30 → 10-28 12:50 (3 d 2 h 20 min); 2014-09-24 17:00 → 09-25 09:00 (16 h); 2022-08-10 20:30 → 08-11 10:00 (13.5 h); 2018-11-07 07:30 → 14:50 (7 h 20 min) |
+
+The `-9999` code is not defined in the provider documentation we read **[Undocumented]**;
+we treat it as a missing-value marker because it is physically impossible for
+air temperature.
+
+## Time zone and daylight saving
+
+- **[Source]** The time column is labelled **MEZ** (Mitteleuropäische Zeit, Central
+  European Time).
+- **[Undocumented]** The documentation does not say whether the clock is a fixed
+  UTC+1 all year or switches to summer time, and it does not state a UTC offset.
+  **We do not assume the timestamps are UTC.** The provider has not confirmed
+  anything beyond the "MEZ" label.
+- **[Measured, raw records]** The check uses the original, non-deduplicated rows.
+  For the last Sunday of March and of October in every year with data (2004–2025,
+  44 days), exactly six raw rows (one per `02:00`–`02:50` slot) exist on each
+  day — no skipped hour in March and no repeated hour (which would give about 12
+  raw rows or repeated timestamps) in October. None of the 478 duplicated rows
+  falls on those days; they come from file overlap (144) and repeated rows
+  inside archives (334), on unrelated dates. So the duplicates are **not**
+  evidence about clock behaviour.
+- **[Measured]** Peak mean short-wave radiation (`SWDR`) on the hour falls at the
+  `12:00` label in both Dec/Jan and Jun/Jul, i.e. no one-hour seasonal shift.
+- **What this does and does not establish:** the data are consistent with a
+  clock that keeps one offset all year. They cannot establish the provider's
+  intended semantics, nor rule out that a logger silently dropped or overwrote
+  data at clock changes, nor give the absolute UTC offset. Treat the time zone
+  and DST behaviour as **unverified**.
+- **Working decision (proposed):** treat timestamps as naive station-clock labels on
+  a continuous axis; never convert to UTC or another zone.
+
+## Cleanup and hourly preparation (proposed rules; script-checked on this data)
+
+The rules below are *proposed* design decisions. The script
+(`scripts/inspect_jena.py`) implements them to produce the measured counts, and
+`tests/test_inspect_jena.py` covers them with synthetic data. No loader exists yet.
+
+1. **Sort** all records by timestamp (8 out-of-order places exist).
+2. **Collapse duplicate timestamps only when their temperatures agree.** If they
+   disagree, **fail** (`ConflictError`) rather than choose one. Measured: 478
+   duplicate rows, 0 conflicts, so all collapse.
+3. **Off-grid observations** (timestamps not on `:00/:10/…` with zero seconds) are
+   **excluded** from aggregation — not snapped or rounded — and listed. Measured: 2.
+   Both have their on-grid slot present, so excluding them loses nothing.
+4. Source is 10-minute **end-of-period** averages. An hour labelled `H:00`
+   (covering `(H-1h, H]`) is the **mean of the six on-grid temperatures stamped
+   `H-50 min … H:00`**.
+5. The hour is **valid only if all six are present and finite** and none is the
+   `-9999` sentinel; otherwise it is an **invalid hour**. No interpolation,
+   forward-fill or imputation.
+6. Windows never contain an invalid hour (so they never span a gap).
+
+Measured: the hourly grid from 2003-11-24 17:00 (first label with six possible
+records) to 2026-01-01 00:00 has **193,760** hours: **193,548 valid** and **212
+invalid**.
+
+## Chronological split and window counts (measured, stride 1)
+
+Method (proposed): boundaries on the **calendar-hour grid** at `floor(0.70·N)` and
+`floor(0.85·N)`, N = 193,760. Windows (72 input + 24 target = 96 consecutive
+valid hours) are built inside each partition. Hour labels are end-of-hour.
+
+| Split | Hour labels (inclusive) | Grid hours | Valid hours | Windows | Longest valid run (h) |
+|-------|-------------------------|-----------:|------------:|--------:|----------------------:|
+| Train | 2003-11-24 17:00 – 2019-05-16 00:00 | 135,632 | 135,438 | 134,678 | 31,582 |
+| Validation | 2019-05-16 01:00 – 2022-09-08 00:00 | 29,064 | 29,047 | 28,762 | 19,281 |
+| Test | 2022-09-08 01:00 – 2026-01-01 00:00 | 29,064 | 29,063 | 28,873 | 23,582 |
+
+Total windows: 192,313. These numbers are tied to the checksum manifest; rerun
+the script if the files change. Stride-1 windows overlap almost entirely, so the
+number of statistically independent test samples is far smaller than the window
+count.
+
+## Intended use
+
+Educational: comparing a recurrent baseline with a self-attention model for
+24-hour-ahead temperature forecasting, and illustrating attention weights, in a
+course project.
+
+## Limitations and out-of-scope uses
+
+- **Not a validated local forecasting service.** The data is one rooftop station
+  in Jena, Germany. It says nothing about any campus weather and the models are
+  not validated for operational decisions.
+- Single variable (temperature); no weather-system inputs, so long-horizon skill
+  will be limited. Forecast errors can be large in rapidly changing weather.
+- Station and sensor changes, siting, and long-term climate trends over 22
+  years mean the later test period may differ from the training period.
+- Quality control by the provider is described only as "checked for plausibility"
+  **[Source]**; we did not independently validate sensor accuracy.
+- Timestamp zone/DST semantics are inferred, not documented (above).
+- Attribution is required under CC BY 4.0: *Max Planck Institute for
+  Biogeochemistry, Jena — Weather Station Beutenberg (`mpi_roof`),
+  <https://www.bgc-jena.mpg.de/wetter/>*.
+
+## Privacy and persistence
+
+The data is environmental measurements and contains no personal data.
+User-submitted forecast inputs are a separate matter; see the project's privacy
+statement (not yet written).
+
+## Remaining open items
+
+- [ ] Time zone / DST semantics of `MEZ` are **unverified** (see above); ask the
+  provider or find documentation.
+- [ ] Meaning of `-9999` (548 records in May 2007) is undocumented; treated as missing.
+- [ ] Why the provider's files contain repeated rows and 8 out-of-order places
+  (e.g. 2014-03-20/21 and 2023-10-20/21 repeats) is unknown.
+- [ ] Whether to use all years (2003–2026, as counted above) or restrict the range.
+- [ ] Whether other "Jena Climate" copies are the same subset is unverified.
+- [ ] Window stride for training; stride 1 is assumed only for the counts.
+session1
+Bash
+IN
+cat db/migrations/001_init.sql api/db.py ui/.streamlit/secrets.toml.example render.yaml; grep -n "environ\|getenv" -r api db ui | head -20; git check-ignore -v .env ui/.streamlit/secrets.toml; ls -a . ui/.streamlit
+
+OUT
+-- 001_init.sql
+-- Tables for the "Attend-It" product: LSTM + attention sequence classifier.
+-- Apply this in the Supabase dashboard: SQL Editor -> New query -> paste -> Run.
+
+-- ---------------------------------------------------------------------------
+-- datasets: one row per synthetic sequence dataset. Only the generation
+-- PARAMETERS are stored -- the token sequences are regenerated deterministically
+-- from `seed`, so no raw sequences live in the database.
+-- ---------------------------------------------------------------------------
+create table if not exists datasets (
+    id          bigint generated always as identity primary key,
+    name        text        not null,
+    n_rows      integer     not null,
+    seq_len     integer     not null,
+    vocab_size  integer     not null,
+    n_classes   integer     not null,
+    seed        integer     not null,
+    created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- runs: one row per training job (held-out metrics). Anon-readable.
+-- ---------------------------------------------------------------------------
+create table if not exists runs (
+    id          bigint generated always as identity primary key,
+    dataset_id  bigint      not null references datasets (id) on delete cascade,
+    lr          double precision not null,
+    batch_size  integer     not null,
+    epochs      integer     not null,
+    accuracy    double precision not null,
+    macro_f1    double precision not null,
+    created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- run_artifacts: the fitted attention model, base64-encoded. Not anon-readable.
+-- ---------------------------------------------------------------------------
+create table if not exists run_artifacts (
+    run_id      bigint      primary key references runs (id) on delete cascade,
+    model_b64   text        not null,
+    created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- sequence_metadata: one row per served prediction. We store the sequence's
+-- SHA-256 hash + length + predicted class -- NEVER the raw tokens (privacy
+-- invariant).
+-- ---------------------------------------------------------------------------
+create table if not exists sequence_metadata (
+    id          bigint generated always as identity primary key,
+    run_id      bigint      not null references runs (id) on delete cascade,
+    sha256      text        not null,
+    length      integer     not null,
+    label       integer     not null,
+    class_name  text        not null,
+    confidence  double precision not null,
+    created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_runs_dataset_id          on runs (dataset_id);
+create index if not exists idx_runs_created_at           on runs (created_at desc);
+create index if not exists idx_sequence_metadata_run_id  on sequence_metadata (run_id);
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security. The Streamlit "Run History" tab reads `runs` with the
+-- ANON key, so we allow anonymous SELECT on runs only. The API uses the
+-- SERVICE-ROLE key which bypasses RLS, so all writes stay server-side.
+-- ---------------------------------------------------------------------------
+alter table datasets          enable row level security;
+alter table runs              enable row level security;
+alter table run_artifacts     enable row level security;
+alter table sequence_metadata enable row level security;
+
+drop policy if exists "anon can read runs" on runs;
+create policy "anon can read runs"
+    on runs for select
+    to anon
+    using (true);
+"""Supabase persistence helpers for the API tier.
+
+All Supabase access for the model service is funneled through this module. The
+FastAPI app calls these functions; it never talks to Supabase directly. The
+Streamlit UI NEVER imports this module -- it does its one read-only query with
+the anon key on its own side.
+
+We store an input sequence's **sha256 hash and length** in `sequence_metadata`,
+never the raw tokens (the "store hashes, not raw payloads" invariant). The
+fitted attention model lives in `run_artifacts` (not anon-readable).
+
+Environment variables (set locally in a .env, and in the Render dashboard):
+    SUPABASE_URL              -> https://<project-ref>.supabase.co
+    SUPABASE_SERVICE_KEY      -> the service-role key (server-side only, secret!)
+"""
+from __future__ import annotations
+
+import os
+from typing import List, Optional
+
+from supabase import Client, create_client
+
+_client: Optional[Client] = None
+
+_RUN_COLS = "id,dataset_id,lr,batch_size,epochs,accuracy,macro_f1,created_at"
+
+
+def get_client() -> Client:
+    """Lazily create and cache a Supabase client."""
+    global _client
+    if _client is None:
+        url = os.environ["SUPABASE_URL"]
+        key = os.environ["SUPABASE_SERVICE_KEY"]
+        _client = create_client(url, key)
+    return _client
+
+
+def ping() -> bool:
+    try:
+        get_client().table("datasets").select("id").limit(1).execute()
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# datasets  (only the generation parameters -- sequences are regenerated by seed)
+# ---------------------------------------------------------------------------
+def insert_dataset(
+    name: str, n_rows: int, seq_len: int, vocab_size: int, n_classes: int, seed: int
+) -> dict:
+    resp = (
+        get_client()
+        .table("datasets")
+        .insert(
+            {
+                "name": name,
+                "n_rows": n_rows,
+                "seq_len": seq_len,
+                "vocab_size": vocab_size,
+                "n_classes": n_classes,
+                "seed": seed,
+            }
+        )
+        .execute()
+    )
+    return resp.data[0]
+
+
+def get_dataset(dataset_id: int) -> Optional[dict]:
+    resp = (
+        get_client()
+        .table("datasets")
+        .select("*")
+        .eq("id", dataset_id)
+        .limit(1)
+        .execute()
+    )
+    return resp.data[0] if resp.data else None
+
+
+# ---------------------------------------------------------------------------
+# runs  +  run_artifacts
+# ---------------------------------------------------------------------------
+def insert_run(
+    dataset_id: int,
+    lr: float,
+    batch_size: int,
+    epochs: int,
+    metrics: dict,
+    model_b64: str,
+) -> dict:
+    client = get_client()
+    resp = (
+        client.table("runs")
+        .insert(
+            {
+                "dataset_id": dataset_id,
+                "lr": lr,
+                "batch_size": batch_size,
+                "epochs": epochs,
+                "accuracy": metrics["accuracy"],
+                "macro_f1": metrics["macro_f1"],
+            }
+        )
+        .execute()
+    )
+    run = resp.data[0]
+    client.table("run_artifacts").insert(
+        {"run_id": run["id"], "model_b64": model_b64}
+    ).execute()
+    return run
+
+
+def get_run(run_id: int) -> Optional[dict]:
+    resp = (
+        get_client().table("runs").select(_RUN_COLS).eq("id", run_id).limit(1).execute()
+    )
+    return resp.data[0] if resp.data else None
+
+
+def get_run_artifact(run_id: int) -> Optional[str]:
+    resp = (
+        get_client()
+        .table("run_artifacts")
+        .select("model_b64")
+        .eq("run_id", run_id)
+        .limit(1)
+        .execute()
+    )
+    return resp.data[0]["model_b64"] if resp.data else None
+
+
+def latest_runs(limit: int = 50) -> List[dict]:
+    resp = (
+        get_client()
+        .table("runs")
+        .select(_RUN_COLS)
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return resp.data
+
+
+# ---------------------------------------------------------------------------
+# sequence_metadata  (hash + length + prediction; NO raw tokens)
+# ---------------------------------------------------------------------------
+def insert_sequence_metadata(
+    run_id: int,
+    sha256: str,
+    length: int,
+    label: int,
+    class_name: str,
+    confidence: float,
+) -> dict:
+    resp = (
+        get_client()
+        .table("sequence_metadata")
+        .insert(
+            {
+                "run_id": run_id,
+                "sha256": sha256,
+                "length": length,
+                "label": label,
+                "class_name": class_name,
+                "confidence": confidence,
+            }
+        )
+        .execute()
+    )
+    return resp.data[0]
+# Copy to .streamlit/secrets.toml for local dev, and paste the same keys into
+# the Streamlit Community Cloud "Secrets" box when deploying.
+# NEVER commit the real secrets.toml (it is in .gitignore).
+
+API_URL = "https://your-service.onrender.com"
+SUPABASE_URL = "https://your-project-ref.supabase.co"
+# The ANON key is public-safe (RLS restricts it to SELECT on runs). Do NOT put
+# the service-role key here.
+SUPABASE_ANON_KEY = "your-anon-key"
+# Render.com blueprint for the FastAPI model service (Cloud #2).
+# In the Render dashboard: New -> Blueprint -> point at this repo.
+# Set SUPABASE_URL and SUPABASE_SERVICE_KEY as environment variables (secrets)
+# in the service settings after the first deploy.
+services:
+  - type: web
+    name: attend-it-api
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r api/requirements.txt"
+    startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*"
+api/db.py:32:        url = os.environ["SUPABASE_URL"]
+api/db.py:33:        key = os.environ["SUPABASE_SERVICE_KEY"]
+api/main.py:51:    allow_origins=os.environ.get("ALLOWED_ORIGINS", "*").split(","),
+api/main.py:58:    if os.environ.get("RENDER_GIT_COMMIT"):
+api/main.py:59:        return os.environ["RENDER_GIT_COMMIT"][:7]
+api/main.py:71:    url = os.environ.get("SUPABASE_URL", "")
+db/seed.py:28:    if not (os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_KEY")):
+.gitignore:131:.env	.env
+.:
+.
+..
+.git
+.gitattributes
+.gitignore
+MODEL_CARD.md
+README.md
+ai-documentation
+api
+data
+db
+docs
+render.yaml
+requirements-dev.txt
+scripts
+shared
+tests
+ui
+
+ui/.streamlit:
+.
+..
+secrets.toml.example
+Write file
+202 lines
+Bash
+IN
+cat > .env.example <<'EOF'
+# Backend (FastAPI) environment. Copy to .env for local use; set the same
+# names in the Render dashboard. Placeholders only: never commit real values.
+# .env is git-ignored.
+
+# Supabase project URL (Project Settings -> API)
+SUPABASE_URL=https://your-project-ref.supabase.co
+
+# Service-role key: SERVER-SIDE ONLY. Bypasses RLS. Never put it in the UI,
+# in secrets.toml, or in any client-visible place.
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# Comma-separated allowed CORS origins; tighten from "*" once the UI URL is known.
+ALLOWED_ORIGINS=*
+EOF
+python3 - <<'EOF'
+p='.gitignore'
+s=open(p).read()
+s=s.replace("# Environments\n.env\n","# Environments\n.env\n.env.*\n!.env.example\n",1)
+s+="\n# Streamlit secrets (only secrets.toml.example may be committed)\nsecrets.toml\n.streamlit/secrets.toml\n"
+open(p,'w').write(s)
+EOF
+git check-ignore -v .env .env.local ui/.streamlit/secrets.toml .streamlit/secrets.toml; git check-ignore .env.example ui/.streamlit/secrets.toml.example || echo "examples not ignored (good)"; python3 -c "import pglast" 2>&1 | tail -1
+
+OUT
+.gitignore:131:.env	.env
+.gitignore:132:.env.*	.env.local
+.gitignore:190:secrets.toml	ui/.streamlit/secrets.toml
+.gitignore:191:.streamlit/secrets.toml	.streamlit/secrets.toml
+examples not ignored (good)
+ModuleNotFoundError: No module named 'pglast'
+Write file
+239 lines
+Edit README.md
+Modified
+Bash
+IN
+git status --short && git diff --stat
+
+OUT
+ M .gitignore
+ M README.md
+?? .env.example
+?? ai-documentation/
+?? db/migrations/002_seq_sight_forecasting.sql
+?? docs/supabase-setup.md
+ .gitignore | 6 ++++++
+ README.md  | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+6:14 PM
+The migration is ready for your review, but I have not run it, so none of the SQL has been tested. Nothing was committed, pushed, or sent to Supabase.
+
+Changed files
+New: db/migrations/002_seq_sight_forecasting.sql. This is the only file to apply to the fresh project.
+New: docs/supabase-setup.md. It covers what to apply, the expected tables, the public-access warning, eight read-only verification queries, and why the starter app doesn't work with the new schema.
+New: .env.example, with placeholders only.
+Edited: .gitignore. It now ignores .env.* (except .env.example) and every secrets.toml.
+Edited: README.md, one added link to the setup doc.
+001_init.sql is untouched.
+Schema choices
+sequences: station_ts is timestamp without time zone, kept as the station's hour-end label. It must fall on the hour. UNIQUE (data_version, station_ts), and split is train, validation or test. Temperature is limited to −90…60 °C, which also rejects -9999.
+runs: model type is lstm or attention. The 72-hour input and 24-hour output are enforced by checks. Hyperparameters, preprocessing and compute budget are JSON objects, capped at 8 KiB each. Preprocessing must contain a numeric mean and a std above 0. Validation and test MAE are required, so a run is only inserted after evaluation.
+predictions: the input hash must be 64 hex characters. The forecast must be exactly 24 numbers, and attention (when present) a 72×72 array of numbers. I added a model_type column to this table. A composite foreign key to the run keeps it consistent, and a check forces attention to be NULL for lstm rows and required for attention rows.
+Deleting a run: it uses ON DELETE SET NULL (served_by_run_id), so predictions stay and only the run link is cleared. This needs PostgreSQL 15 or later.
+run_artifacts: a separate table for model weights, deleted along with its run.
+Not implemented: no data_versions table. data_version is a text label, so the loader and runs must use the same string. Attention row sums are not checked.
+Public-access boundary
+RLS is on for all four tables.
+Anonymous clients get SELECT policies on runs and predictions only. sequences and run_artifacts have no policy and no grants.
+I used column-level grants, which Supabase's default grants would otherwise undo, so the migration revokes everything first. A column added later stays private until it's granted. The catch is that an anonymous select=* is rejected, so the UI must list columns.
+Everything granted to anon is public, including hyperparameters, preprocessing, compute budget, forecasts, attention and input hashes. A hash does not make a forecast private. The setup doc says this explicitly.
+The two JSON validator functions can't be called through the API.
+Checks performed
+Git state: git status shows 001_init.sql unchanged.
+Ignore rules: git check-ignore confirms .env, .env.local and both secrets.toml locations are ignored, and both example files are not.
+SQL: not parsed, executed or tested. No parser is installed here, and I stayed away from running any SQL. Please read the SQL carefully, especially the jsonpath validators, the composite foreign key and the ON DELETE SET NULL (col) syntax. The verification queries in the setup doc are how to confirm it after applying.
+The old starter code (api/db.py, db/seed.py, the UI and tests) is still unchanged and won't work with this schema. secrets.toml.example and render.yaml also still describe the old setup.
+
+
+
+Review the proposed forecasting migration in /Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight.
+
+Compare:
+- db/migrations/001_init.sql — Artzi’s original starter; preserve unchanged.
+- db/migrations/002_seq_sight_forecasting.sql — our proposed adaptation.
+- The assignment requirements documented in README.md and docs/data-design.md.
+
+Keep Artzi’s simple database structure and naming style wherever practical, while meeting the forecasting requirements:
+- sequences stores the hourly Jena corpus and split.
+- runs identifies lstm versus attention, hyperparameters, preprocessing, and MAE.
+- predictions stores the input hash, 24-hour forecast, attention matrix where applicable, serving run ID, and timestamp.
+- run_artifacts remains private.
+- Enable RLS and permit only the public reads needed by the UI; writes stay server-side.
+
+Review whether the custom JSON validators, composite foreign key, column-level grants, and deletion behavior are necessary. Simplify unnecessary complexity without removing required validation, privacy boundaries, or audit linkage. Prefer preventing deletion of referenced runs over clearing the prediction’s serving-run link.
+
+Because Supabase is fresh and neither migration has been applied, document exactly which file to apply. Ensure that following the instructions does not create conflicting versions of runs or run_artifacts. Clearly label the forecasting migration as a standalone initialization if that is how it works.
+
+Update docs/supabase-setup.md to match. Explain each significant difference from Artzi’s original and whether it is assignment-required or a design choice.
+
+Do not execute SQL, connect to Supabase, modify application code, install dependencies, commit, or push. Report what you reviewed and what remains untested.
+Show more
+Write file
+153 lines
+Write file
+236 lines
+6:18 PM
+I simplified the migration and rewrote the setup doc to match. I have not run any SQL, connected to Supabase, changed application code, installed anything, or committed. 001_init.sql is untouched.
+
+What I reviewed: 001_init.sql, my earlier 002, the README requirements and docs/data-design.md. The changes are in 002_seq_sight_forecasting.sql and docs/supabase-setup.md.
+
+Which file to apply: only 002. It is labelled as a standalone initialization that replaces 001, not an increment on it. It uses plain CREATE and starts with a guard that aborts if datasets, sequence_metadata or runs already exist. So it can't silently reuse 001's runs or run_artifacts. It is one transaction.
+
+Review verdicts:
+
+Custom JSON validators: removed. Inline CHECKs do the same job, and there are no helper functions left to hide from the API. They check structure only: a forecast of 24 numbers, and attention as 72 rows of 72 numbers.
+Composite foreign key: kept, but only because it is the one way the database can enforce "the baseline has NULL attention". It costs a model_type column on predictions and a unique (id, model_type) on runs. The doc spells out the simpler alternative: drop both and check that rule in the API and tests.
+Column-level grants: removed. runs and predictions have nothing private, so table-level SELECT plus the RLS policies is enough.
+Revoking default grants: kept. Supabase's defaults give anon TRUNCATE, which RLS doesn't stop. I kept this as a security fix.
+Deletion: served_by_run_id is now NOT NULL with ON DELETE RESTRICT, so a run with predictions can't be deleted. This also drops the PostgreSQL 15 requirement.
+Other simplifications:
+run_artifacts is back to 001's exact shape, with model_b64.
+I dropped the input_hours and forecast_hours columns, the JSON size caps, the regex check on data_version, and two extra indexes.
+Index naming follows idx_<table>_<col> like 001.
+The doc now has a table comparing 001 and 002 row by row. Each difference is marked as assignment-required or a design choice, and all of it rests on my reading of the README and data-design docs.
+
+Not tested:
+
+No SQL was parsed or executed, so syntax is unchecked.
+The riskiest parts are the jsonpath filters in the attention check and the ON DELETE RESTRICT composite foreign key. If you can run it, try them on a throwaway Postgres or branch first.
+The doc's eight verification queries are also unrun.
+The starter app and tests still target the old schema. The doc lists exactly what breaks, and I changed none of it.
+
+
+Fix the remaining review findings in db/migrations/002_seq_sight_forecasting.sql and docs/supabase-setup.md:
+
+1. Make the preprocessing constraint explicitly reject missing mean/std keys, JSON nulls, nonnumeric values, and std <= 0. Ensure SQL NULL cannot make an invalid object pass.
+2. Make val_mae_c and test_mae_c reject NaN, positive/negative infinity, and negative values.
+3. Correct the setup document’s distinction between assignment requirements and our design choices. The 72-hour input, 24-value forecast representation, preprocessing persistence, and database-level baseline-NULL enforcement are our implementation choices.
+4. Add a separate rollback-only SQL validation script covering valid rows and expected failures, including missing preprocessing keys, invalid metrics, malformed forecast/attention shapes, mismatched model types, and deletion of a referenced run. Do not run it against Supabase.
+
+Keep Artzi’s original 001_init.sql unchanged. Do not change application code, connect to Supabase, apply SQL, commit, or push. Clearly report that SQL behavior remains untested unless actually tested in a disposable local database.
+Show more
+Bash
+IN
+python3 - <<'EOF'
+p='db/migrations/002_seq_sight_forecasting.sql'
+s=open(p).read()
+old=s[s.index("    preprocessing    jsonb   not null check ("):s.index("    compute_budget")]
+new='''    -- coalesce(..., false): a missing key makes `->` return SQL NULL, and a CHECK
+    -- treats NULL as a pass. Missing keys, JSON nulls, non-numbers and std <= 0
+    -- must all fail, so any NULL result is forced to false.
+    preprocessing    jsonb   not null check (coalesce(
+                         jsonb_typeof(preprocessing) = 'object'
+                         and jsonb_typeof(preprocessing -> 'mean') = 'number'
+                         and jsonb_typeof(preprocessing -> 'std')  = 'number'
+                         and (preprocessing -> 'std') > to_jsonb(0),
+                         false)),
+'''
+s=s.replace(old,new)
+s=s.replace("""    val_mae_c        double precision not null check (val_mae_c  >= 0),
+    test_mae_c       double precision not null check (test_mae_c >= 0),""","""    -- finite and >= 0: NaN sorts above Infinity in PostgreSQL, so `< Infinity`
+    -- rejects NaN and +Infinity; `>= 0` rejects -Infinity and negatives.
+    val_mae_c        double precision not null
+                     check (val_mae_c  >= 0 and val_mae_c  < 'Infinity'::double precision),
+    test_mae_c       double precision not null
+                     check (test_mae_c >= 0 and test_mae_c < 'Infinity'::double precision),""")
+open(p,'w').write(s)
+EOF
+git diff --stat; mkdir -p db/validation
+
+OUT
+ .gitignore | 6 ++++++
+ README.md  | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+Bash
+IN
+grep -n "coalesce\|Infinity" db/migrations/002_seq_sight_forecasting.sql
+
+OUT
+59:    -- coalesce(..., false): a missing key makes `->` return SQL NULL, and a CHECK
+62:    preprocessing    jsonb   not null check (coalesce(
+69:    -- finite and >= 0: NaN sorts above Infinity in PostgreSQL, so `< Infinity`
+70:    -- rejects NaN and +Infinity; `>= 0` rejects -Infinity and negatives.
+72:                     check (val_mae_c  >= 0 and val_mae_c  < 'Infinity'::double precision),
+74:                     check (test_mae_c >= 0 and test_mae_c < 'Infinity'::double precision),
+6:19 PM
+Both fixes are in. Now the rollback-only validation script.
+
+
+
+Write 002_seq_sight_validation.sql
+285 lines
+Bash
+IN
+python3 - <<'EOF'
+p='db/validation/002_seq_sight_validation.sql'
+s=open(p).read()
+i=s.index("-- an unreferenced run can be deleted")
+s=s[:i]+'''-- an unreferenced run can be deleted and takes its artifact with it
+insert into runs (model_type, data_version, seed, hyperparameters, preprocessing, compute_budget, val_mae_c, test_mae_c)
+values ('lstm', 'v-test', 902, '{}', '{"mean":1,"std":1}', '{}', 1, 1);
+insert into run_artifacts (run_id, model_b64) select id, 'BBBB' from runs where seed = 902;
+
+do $$
+begin
+    delete from runs where seed = 902;
+    if exists (select 1 from run_artifacts where model_b64 = 'BBBB') then
+        raise exception 'FAIL: artifact survived deletion of its run';
+    end if;
+    raise notice 'PASS: unreferenced run deleted, artifact cascaded';
+end
+$$;
+
+-- ===========================================================================
+-- anonymous role: read runs/predictions only; everything else denied.
+-- (Requires the Supabase roles; fails with "role anon does not exist" otherwise.)
+-- ===========================================================================
+set local role anon;
+
+do $$
+begin
+    if (select count(*) from runs) <> 2 or (select count(*) from predictions) <> 2 then
+        raise exception 'FAIL: anon cannot read runs/predictions through the policies';
+    end if;
+    raise notice 'PASS: anon can read runs and predictions';
+end
+$$;
+
+do $$
+declare
+    stmt text;
+begin
+    foreach stmt in array array[
+        'select * from sequences',
+        'select * from run_artifacts',
+        'insert into runs (model_type) values (''lstm'')',
+        'update runs set seed = 0',
+        'delete from runs',
+        'truncate runs',
+        'insert into predictions (input_hash) values (''x'')',
+        'update predictions set model_type = ''lstm''',
+        'delete from predictions',
+        'truncate predictions',
+        'insert into sequences (data_version) values (''x'')',
+        'truncate sequences',
+        'truncate run_artifacts'
+    ] loop
+        begin
+            execute stmt;
+            raise exception 'FAIL: anon was allowed: %', stmt;
+        exception when insufficient_privilege then
+            raise notice 'PASS (anon denied, 42501): %', stmt;
+        end;
+    end loop;
+end
+$$;
+
+reset role;
+
+-- Nothing above is kept.
+rollback;
+'''
+open(p,'w').write(s)
+EOF
+git status --short
+
+OUT
+  File "<stdin>", line 47
+    'delete from predictions',
+IndentationError: unexpected indent
+ M .gitignore
+ M README.md
+?? .env.example
+?? ai-documentation/
+?? db/migrations/002_seq_sight_forecasting.sql
+?? db/validation/
+?? docs/supabase-setup.md
+Edit 002_seq_sight_validation.sql
+Added 59 lines
+Bash
+IN
+cat > /private/tmp/claude-501/-Users-emmarogoveanu-Documents-GitHub-cst-435-topic-4-seq-sight/ddf2cb59-cf8e-4f53-ad57-37ac47cc07cf/scratchpad/section.md <<'EOF'
+## Differences from Artzi's original `001_init.sql`
+
+**What counts as "required".** The only requirements I can point to are those
+stated in the [README](../README.md) (scope, checklist) — I have not seen the
+assignment handout itself. [Data design](data-design.md) states that its
+windows, splits and tables are *team decisions, not assignment-mandated*. The
+"Basis" column uses three labels:
+
+- **README requirement**: stated in the README's scope or checklist.
+- **Starter pattern**: kept from Artzi's `001`.
+- **Our choice**: a team implementation decision, including everything in
+  [data design](data-design.md).
+
+| Area | `001` (Attend-It) | `002` (Seq Sight) | Basis |
+|------|-------------------|-------------------|-------|
+| Tables | `datasets`, `runs`, `run_artifacts`, `sequence_metadata` | `sequences`, `runs`, `run_artifacts`, `predictions` | **README requirement**: it names `sequences`, `runs`, `predictions`. `run_artifacts` is a **starter pattern**. |
+| `predictions` columns | `sequence_metadata`: hash, length, class, confidence | input hash, forecast, attention, serving run id, created_at | **README requirement** (checklist lists exactly these). Storing a hash, not the raw input, is a **starter pattern**. |
+| Corpus | `datasets` holds generation parameters only | `sequences` stores the hourly corpus with `data_version`, `split` | **README requirement** (load the hourly readings with train/validation/test split). `data_version` as a plain text label is **our choice**. |
+| Timestamps | n/a | `station_ts timestamp without time zone`, on the hour, unique per `(data_version, station_ts)` | **Our choice**, following the data-design/dataset-card position that the time zone is unverified and never converted to UTC. Hour alignment and uniqueness are also ours. |
+| Temperature range | n/a | −90…60 °C (NaN also fails); rejects the `-9999` sentinel | **Our choice** |
+| `runs` identity | `dataset_id` FK | `model_type` (`lstm`/`attention`), `data_version`, `seed` | `model_type`, `seed`: **README requirement** (compare models with matched seeds). `data_version`: **our choice**. |
+| `runs` hyperparameters | `lr`, `batch_size`, `epochs` columns | `hyperparameters` JSON object | Persisting them is a **starter pattern**; JSON instead of columns is **our choice** (the two models differ). |
+| `runs` compute budget | none | `compute_budget` JSON object | **README requirement** (matched compute budgets); storing it as JSON is **our choice**. |
+| `runs` metrics | `accuracy`, `macro_f1` | `val_mae_c`, `test_mae_c`, finite and ≥ 0 | Persisted **test MAE**: **README requirement**. Validation MAE and the finiteness rule are **our choice**. |
+| `runs.preprocessing` | none | JSON object that must contain numeric `mean` and `std > 0` | **Our choice**. Persisting preprocessing with the run is our implementation of the data-design plan (train-only standardization), not something the README mandates by itself. |
+| 72-hour input / 24-value forecast | n/a | Not columns on `runs`; `predictions.forecast` must be an array of exactly 24 numbers, `attention` 72 rows × 72 numbers | **Our choice.** The 24-hour horizon is the project scope in the README, but the 72-hour input window and the array-of-24 representation are our design (data design is explicitly "proposed"). |
+| Baseline attention NULL | n/a | `model_type` on `predictions`; `CHECK` lstm ⇒ NULL, attention ⇒ required; composite FK to `runs(id, model_type)` | The *behavior* (no fabricated attention for the baseline) is stated in data design, which is itself proposed. Enforcing it **in the database** is **our choice**. |
+| JSON validation | none | Inline `CHECK`s | **Our choice** |
+| Run link | `run_id … on delete cascade` | `served_by_run_id not null … on delete restrict` | **Our choice** (audit linkage: referenced runs cannot be deleted). |
+| Public reads | policy `anon can read runs` | policies on `runs` **and** `predictions` | The UI history tab: **README requirement**. Policy naming is a **starter pattern**. |
+| Privileges | RLS only, default grants | Revoke all from `anon`/`authenticated`; grant `SELECT` on `runs`, `predictions` | **Our choice** (security hardening) |
+| Index naming | `idx_<table>_<col>` | same | **Starter pattern** |
+
+EOF
+python3 - <<'EOF'
+p='docs/supabase-setup.md'
+s=open(p).read()
+a=s.index("## Differences from Artzi")
+b=s.index("### Choices reviewed")
+new=open('/private/tmp/claude-501/-Users-emmarogoveanu-Documents-GitHub-cst-435-topic-4-seq-sight/ddf2cb59-cf8e-4f53-ad57-37ac47cc07cf/scratchpad/section.md').read()
+s=s[:a]+new+s[b:]
+# constraint details
+s=s.replace("### Choices reviewed and simplified\n","""### Constraint details
+
+- **`runs.preprocessing`** is rejected unless it is an object whose `mean` and
+  `std` are both JSON numbers and `std > 0`. A missing key, a JSON `null`, a
+  string, or `std <= 0` all fail. The expression is wrapped in `coalesce(…,
+  false)` because a missing key makes `->` return SQL `NULL`, and a `CHECK`
+  *passes* on `NULL`; without the wrapper an object lacking `mean` or `std`
+  would have been accepted. Pure SQL `NULL` is rejected by `NOT NULL`.
+- **`val_mae_c` / `test_mae_c`** must satisfy `>= 0 and < Infinity`. PostgreSQL
+  sorts `NaN` above `Infinity`, so `NaN` and `+Infinity` fail the upper bound,
+  and `-Infinity` and negatives fail the lower bound.
+- The same NaN ordering is why `temperature_c between -90 and 60` rejects `NaN`.
+
+### Choices reviewed and simplified
+""",1)
+s=s.replace("""## Read-only verification SQL""","""## Behavior tests (not yet run)
+
+[db/validation/002_seq_sight_validation.sql](../db/validation/002_seq_sight_validation.sql)
+is a **rollback-only** script: it inserts valid rows, then checks that bad rows
+fail with the expected error code, and always ends with `ROLLBACK`. It covers
+missing/null/non-numeric/zero/negative preprocessing values, NaN, infinite and
+negative MAE, malformed forecast and attention shapes, baseline-with-attention
+and attention-without-matrix, model type that disagrees with the run, deletion
+of a referenced run, naive-timestamp preservation, and the anonymous role's
+read-only access.
+
+**Never run it against the real Supabase project.** It is meant for a
+disposable local PostgreSQL that has `002` applied and the `anon`,
+`authenticated` and `service_role` roles created. It refuses to start if any
+table has rows. **It has not been executed yet, so the behavior of `002` is
+still untested.**
+
+## Read-only verification SQL""",1)
+s=s.replace("""> **Status: migration prepared for review. It has not been applied to any
+> database, and the SQL has not been executed or tested.** Behavior described
+> below is intent; confirm it with the checks in this document after applying.""","""> **Status: migration prepared for review. It has not been applied to any
+> database, and neither the migration nor the validation script has been
+> executed.** Behavior described below is intent, not tested fact.""")
+open(p,'w').write(s)
+EOF
+grep -n "required\|Required" docs/supabase-setup.md | head -20; git status --short
+
+OUT
+40:**What counts as "required".** The only requirements I can point to are those
+64:| Baseline attention NULL | n/a | `model_type` on `predictions`; `CHECK` lstm ⇒ NULL, attention ⇒ required; composite FK to `runs(id, model_type)` | The *behavior* (no fabricated attention for the baseline) is stated in data design, which is itself proposed. Enforcing it **in the database** is **our choice**. |
+ M .gitignore
+ M README.md
+?? .env.example
+?? ai-documentation/
+?? db/migrations/002_seq_sight_forecasting.sql
+?? db/validation/
+?? docs/supabase-setup.md
+Bash
+IN
+which psql postgres pg_ctl initdb 2>&1 | head; ls /opt/homebrew/opt 2>/dev/null | grep -i postgres
+
+OUT
+psql not found
+postgres not found
+pg_ctl not found
+initdb not found
+6:20 PM
+All four fixes are written, but none of the SQL has been run. This machine has no PostgreSQL (psql, postgres and initdb are all absent), and I didn't install one. 001_init.sql is untouched, and I changed no application code.
+
+Changes
+1. Preprocessing constraint in 002_seq_sight_forecasting.sql. My earlier version had a real bug: an object missing mean or std would have been accepted. A missing key makes -> return SQL NULL, and a CHECK passes on NULL. The check is now wrapped in coalesce(..., false). It rejects a missing key, a JSON null, a non-number, and std <= 0. A column that is itself SQL NULL is stopped by NOT NULL.
+
+2. Metrics. val_mae_c and test_mae_c must be >= 0 and < 'Infinity'::double precision. PostgreSQL sorts NaN above Infinity, so the upper bound rejects NaN and +Infinity, and the lower bound rejects −Infinity and negatives. This relies on that NaN ordering, which only a real test can confirm.
+
+3. Setup doc. The comparison table now has a "Basis" column with three values: README requirement, starter pattern, or our choice. I moved these to "our choice": the 72-hour input, the 24-value array format, saving preprocessing with the run, and enforcing the baseline-NULL rule in the database. The doc says I only know the requirements from the README, not the assignment handout. It also explains the constraint details above.
+
+4. db/validation/002_seq_sight_validation.sql. It refuses to start if any table has rows, and it always ends with ROLLBACK. It asserts each expected failure by its exact error code. It covers:
+
+valid rows;
+every preprocessing and metric failure listed above;
+wrong-size and wrong-type forecast and attention data;
+an lstm row with attention, and an attention row without it;
+a model type that disagrees with its run, and a missing run;
+deleting a referenced run (blocked) versus an unreferenced one (its artifact is deleted with it);
+naive timestamps surviving a session timezone change;
+the anonymous role being read-only on runs and predictions and denied everything else, including TRUNCATE.
+Not tested
+Neither the migration nor the validation script has been executed anywhere. The validation script has never been run either, so it may have its own bugs.
+The least certain parts are the jsonpath filters on the forecast and attention shapes. Next are the composite foreign key with RESTRICT, and the NaN comparisons.
+To test it, use a throwaway local PostgreSQL. Create the anon, authenticated and service_role roles, apply 002, then run the validation script. Never run it on the real Supabase project.
+
+
+002_seq_sight_forecasting.sql#1-161
+Continue Seq Sight in /Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight.
+
+The forecasting migration 002 has been applied to Supabase. The user verified RLS, anonymous read-only grants, and the two SELECT policies. No corpus has been uploaded.
+
+Read the dataset card, data design, inspection script, and forecasting migration. Implement db/load.py with a default dry-run mode.
+
+Requirements:
+- Reuse the verified preparation logic; avoid maintaining a second conflicting implementation.
+- Read the existing local Jena ZIP files. Verify them against the checksum manifest.
+- Sort timestamps, collapse identical-temperature duplicates, reject conflicts, and exclude/report off-grid observations.
+- Aggregate hourly temperatures using the documented six-reading, hour-end rule. Exclude invalid hours without interpolation.
+- Assign chronological splits using the documented full hourly grid, preserving gaps and naive station timestamps.
+- Use a reproducible data-version identifier tied to the source manifest and preparation settings.
+- Dry-run must require no credentials, make no network requests, and perform no database writes.
+- Report source counts, valid/invalid hourly counts, split boundaries, per-split row counts, and valid 72→24 window counts.
+- Add an explicit --upload option for later use. It should load credentials from an ignored .env file, validate configuration without printing secrets, upload in bounded batches, and safely resume without creating duplicates or silently overwriting conflicting data.
+- Add meaningful synthetic tests for preparation, split boundaries, gap handling, and upload/resume behavior using mocks. Keep dry-run usable without importing database dependencies unnecessarily.
+- Document exact dry-run and future upload commands in docs/supabase-setup.md.
+- Update the setup status to distinguish the user's reported successful migration and permission checks from tests you actually execute.
+- Do not alter the applied migration. Future schema changes require a new migration.
+
+Do not connect to Supabase, upload, download additional data, install dependencies, commit, or push. Do not read or display real credentials. Run available local checks and report exactly what passed or remains untested.
+Show more
+Bash
+IN
+wc -l scripts/inspect_jena.py tests/test_inspect_jena.py tests/conftest.py && cat scripts/inspect_jena.py && sed -n 1,60p tests/test_inspect_jena.py && cat tests/conftest.py requirements-dev.txt api/requirements.txt; head -3 docs/jena-mpi-roof-checksums.txt; ls data/raw/mpi_roof | head -3; cat db/seed.py | head -50; python3 --version; python3 -c "import pytest,supabase;print('ok')"
+
+OUT
+Exit code 1
+     330 scripts/inspect_jena.py
+     100 tests/test_inspect_jena.py
+     102 tests/conftest.py
+     532 total
+"""Inspect the raw Jena (MPI-BGC Beutenberg `mpi_roof`) ZIP files; stdlib only.
+
+Reads CSV members straight out of the ZIPs as text (nothing in the download is
+executed) and prints the statistics recorded in docs/dataset-card.md.
+
+    python3 -I scripts/inspect_jena.py [data/raw/mpi_roof] [--write-manifest docs/jena-mpi-roof-checksums.txt]
+
+Cleanup rules (also documented in docs/data-design.md):
+  1. sort records by timestamp;
+  2. collapse duplicate timestamps only when their temperatures agree;
+  3. fail (ConflictError) when duplicates disagree;
+  4. off-grid timestamps (not on a :00/:10/... minute with zero seconds) are
+     excluded from the hourly aggregation, never snapped, and reported;
+  5. a missing/non-finite/-9999 temperature makes its hour invalid; no filling.
+"""
+import csv
+import hashlib
+import io
+import math
+import sys
+import zipfile
+from collections import Counter, defaultdict, namedtuple
+from datetime import datetime, timedelta
+from pathlib import Path
+
+STEP = timedelta(minutes=10)
+INPUT_H, TARGET_H = 72, 24
+SENTINELS = {-9999.0}
+
+# One raw CSV data row. `temp` is None when unparseable; `order` is the position
+# in file-concatenation order (used to report out-of-order records).
+Record = namedtuple("Record", "ts temp swdr file order")
+
+
+class ConflictError(ValueError):
+    """Duplicate timestamps whose temperatures disagree."""
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def parse_ts(text):
+    """German date format; the files carry seconds even though the docs' example does not."""
+    for fmt in ("%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            pass
+    return None
+
+
+def is_valid_temp(v):
+    return v is not None and math.isfinite(v) and v not in SENTINELS
+
+
+def on_grid(ts):
+    return ts.second == 0 and ts.microsecond == 0 and ts.minute % 10 == 0
+
+
+# ---------------------------------------------------------------- reading
+
+def read_zip(path):
+    """Yield (member, header, rows) per CSV member; rows are lists of strings."""
+    with zipfile.ZipFile(path) as z:
+        for name in z.namelist():
+            if name.endswith("/") or not name.lower().endswith((".csv", ".txt")):
+                print(f"  NOTE non-CSV member ignored in {path.name}: {name}")
+                continue
+            text = io.TextIOWrapper(z.open(name), encoding="utf-8-sig", errors="replace", newline="")
+            r = csv.reader(text)
+            yield name, next(r), [row for row in r if row]
+
+
+def load_records(files):
+    """Return (records, header_layouts, unparseable_timestamps, per_file_rows)."""
+    records, headers, bad_ts, per_file = [], Counter(), 0, {}
+    for p in files:
+        n0 = len(records)
+        for _member, header, rows in read_zip(p):
+            headers[tuple(header)] += 1
+            ti = header.index("T (degC)")
+            si = next((i for i, c in enumerate(header) if c.startswith("SWDR")), None)
+            for row in rows:
+                ts = parse_ts(row[0].strip())
+                if ts is None:
+                    bad_ts += 1
+                    continue
+                try:
+                    temp = float(row[ti])
+                except ValueError:
+                    temp = None
+                try:
+                    sw = float(row[si]) if si is not None else None
+                except ValueError:
+                    sw = None
+                records.append(Record(ts, temp, sw, p.name, len(records)))
+        per_file[p.name] = len(records) - n0
+    return records, headers, bad_ts, per_file
+
+
+# --------------------------------------------------------------- cleaning
+
+def group_by_timestamp(records):
+    groups = defaultdict(list)
+    for r in records:
+        groups[r.ts].append(r)
+    return groups
+
+
+def classify_duplicates(records):
+    """Duplicate-timestamp groups -> (cross_file, within_file, conflicting) lists of ts.
+
+    cross_file: copies come from different archives (file overlap);
+    within_file: all copies are in one archive (repeated rows);
+    conflicting: copies whose temperatures disagree (reported under either kind too).
+    """
+    cross, within, conflicting = [], [], []
+    for ts, grp in sorted(group_by_timestamp(records).items()):
+        if len(grp) < 2:
+            continue
+        (cross if len({r.file for r in grp}) > 1 else within).append(ts)
+        if len({r.temp for r in grp}) > 1:
+            conflicting.append(ts)
+    return cross, within, conflicting
+
+
+def collapse_duplicates(records):
+    """Sorted {ts: temp}; duplicates collapse only if temperatures agree, else ConflictError."""
+    out = {}
+    for ts, grp in sorted(group_by_timestamp(records).items()):
+        temps = {r.temp for r in grp}
+
+
+... [12049 characters truncated] ...
+
+ters = {"datasets": 0, "runs": 0}
+
+    def insert_dataset(name, n_rows, seq_len, vocab_size, n_classes, seed):
+        counters["datasets"] += 1
+        row = {
+            "id": counters["datasets"],
+            "name": name,
+            "n_rows": n_rows,
+            "seq_len": seq_len,
+            "vocab_size": vocab_size,
+            "n_classes": n_classes,
+            "seed": seed,
+            "created_at": "2026-01-01T00:00:00+00:00",
+        }
+        store["datasets"][row["id"]] = row
+        return row
+
+    def get_dataset(dataset_id):
+        return store["datasets"].get(dataset_id)
+
+    def insert_run(dataset_id, lr, batch_size, epochs, metrics, model_b64):
+        counters["runs"] += 1
+        row = {
+            "id": counters["runs"],
+            "dataset_id": dataset_id,
+            "lr": lr,
+            "batch_size": batch_size,
+            "epochs": epochs,
+            "accuracy": metrics["accuracy"],
+            "macro_f1": metrics["macro_f1"],
+            "created_at": "2026-01-01T00:00:00+00:00",
+        }
+        store["runs"][row["id"]] = row
+        store["artifacts"][row["id"]] = model_b64
+        return row
+
+    def get_run(run_id):
+        return store["runs"].get(run_id)
+
+    def get_run_artifact(run_id):
+        return store["artifacts"].get(run_id)
+
+    def latest_runs(limit=50):
+        return list(store["runs"].values())[-limit:][::-1]
+
+    def insert_sequence_metadata(run_id, sha256, length, label, class_name, confidence):
+        row = {
+            "id": len(store["sequence_metadata"]) + 1,
+            "run_id": run_id,
+            "sha256": sha256,
+            "length": length,
+            "label": label,
+            "class_name": class_name,
+            "confidence": confidence,
+        }
+        store["sequence_metadata"].append(row)
+        return row
+
+    monkeypatch.setattr(db, "ping", lambda: True)
+    monkeypatch.setattr(db, "insert_dataset", insert_dataset)
+    monkeypatch.setattr(db, "get_dataset", get_dataset)
+    monkeypatch.setattr(db, "insert_run", insert_run)
+    monkeypatch.setattr(db, "get_run", get_run)
+    monkeypatch.setattr(db, "get_run_artifact", get_run_artifact)
+    monkeypatch.setattr(db, "latest_runs", latest_runs)
+    monkeypatch.setattr(db, "insert_sequence_metadata", insert_sequence_metadata)
+
+    from api.main import app
+
+    with TestClient(app) as c:
+        c._store = store  # expose for assertions
+        yield c
+
+
+def has_supabase_creds() -> bool:
+    return bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_KEY"))
+# Local development + running the test suite from the repo root.
+# Installs both tiers plus pytest. On the actual clouds, each tier installs only
+# its own requirements (api/requirements.txt or ui/requirements.txt).
+-r api/requirements.txt
+-r ui/requirements.txt
+pytest==8.3.3
+httpx==0.27.2
+PyYAML==6.0.2
+# API tier (deployed on Render.com)
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+# CPU-only torch keeps the Render build small and free-tier friendly.
+torch==2.4.1
+numpy==1.26.4
+supabase==2.7.4
+python-dotenv==1.0.1
+# filename  sha256  data_rows   (generated by scripts/inspect_jena.py from the local files)
+mpi_roof_2003b.zip  1005559c1c218bd6068101edebab76b5473720f8dada563d07daa48b67a3f603  5377
+mpi_roof_2004a.zip  bb93ccede6981b8fc6e09c3b4dbbb8fda0ee6dfe495e741a0e3ab212edfecb3f  26208
+Weatherstation.pdf
+mpi_roof_2003b.zip
+mpi_roof_2004a.zip
+"""Apply the migration (manually) and seed one default dataset into Supabase.
+
+Usage (from the repo root, with a .env present or the env vars exported):
+
+    python -m db.seed
+
+This uses the SERVICE-ROLE key so it can write. Never commit that key.
+"""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+from api import db
+from shared.data import N_CLASSES, SEQ_LEN, VOCAB_SIZE
+
+load_dotenv()
+
+MIGRATION = Path(__file__).parent / "migrations" / "001_init.sql"
+
+
+def main() -> None:
+    # NOTE: supabase-py cannot run arbitrary DDL over the REST API. Apply
+    # 001_init.sql once in the Supabase SQL Editor (see the main TUTORIAL). This
+    # script only seeds data, which the REST API supports.
+    if not (os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_KEY")):
+        raise SystemExit("Set SUPABASE_URL and SUPABASE_SERVICE_KEY first.")
+
+    print(f"Migration file: {MIGRATION} (apply it in the SQL Editor if you have not).")
+
+    row = db.insert_dataset(
+        name="default-sequences",
+        n_rows=800,
+        seq_len=SEQ_LEN,
+        vocab_size=VOCAB_SIZE,
+        n_classes=N_CLASSES,
+        seed=42,
+    )
+    print(
+        f"Seeded dataset id={row['id']} name={row['name']} "
+        f"n_rows={row['n_rows']} seq_len={SEQ_LEN} n_classes={N_CLASSES}"
+    )
+
+
+if __name__ == "__main__":
+    main()
+Python 3.14.4
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import pytest,supabase;print('ok')
+    ^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'pytest'
+6:55 PM
+The output was truncated; I need the middle of the inspection script and the test file.
+
+
+
+Read inspect_jena.py (from line 111)
+Read test_inspect_jena.py
+Bash
+IN
+python3 -c "import pytest" 2>&1|tail -1; python3 -c "import supabase" 2>&1|tail -1; python3 -c "import dotenv" 2>&1|tail -1; ls .venv venv 2>&1 | head -2; ls data/raw/mpi_roof | wc -l; ls tests; git status --short; grep -n "sys.path\|rootdir\|pythonpath" -r tests pytest.ini pyproject.toml 2>/dev/null
+
+OUT
+Exit code 2
+ModuleNotFoundError: No module named 'pytest'
+ModuleNotFoundError: No module named 'supabase'
+ModuleNotFoundError: No module named 'dotenv'
+ls: .venv: No such file or directory
+ls: venv: No such file or directory
+      45
+__init__.py
+conftest.py
+test_healthz.py
+test_inspect_jena.py
+test_schema.py
+test_supabase_roundtrip.py
+test_training.py
+ M .gitignore
+ M README.md
+?? .env.example
+?? ai-documentation/
+?? db/migrations/002_seq_sight_forecasting.sql
+?? db/validation/
+?? docs/supabase-setup.md
+Write load.py
+442 lines
+Write test_load.py
+411 lines
+Bash
+IN
+python3 -m unittest tests.test_load tests.test_inspect_jena 2>&1 | tail -40
+
+OUT
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+    ~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/main.py", line 103, in __init__
+    self.parseArgs(argv)
+    ~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/main.py", line 142, in parseArgs
+    self.createTests()
+    ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/main.py", line 153, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                                                   self.module)
+                                                   ^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 207, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+              ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 18, in <module>
+    _spec.loader.exec_module(load)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/db/load.py", line 130, in <module>
+    @dataclass
+     ^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/dataclasses.py", line 1442, in dataclass
+    return wrap(cls)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/dataclasses.py", line 1432, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+                          frozen, match_args, kw_only, slots,
+                          weakref_slot)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/dataclasses.py", line 1055, in _process_class
+    and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY,
+        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 _is_kw_only))):
+                 ^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/dataclasses.py", line 814, in _is_type
+    ns = sys.modules.get(cls.__module__).__dict__
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute '__dict__'. Did you mean: '__dir__'?
+Bash
+IN
+python3 - <<'EOF'
+p='tests/test_load.py'
+s=open(p).read()
+s=s.replace("load = importlib.util.module_from_spec(_spec)\n_spec.loader","load = importlib.util.module_from_spec(_spec)\nsys.modules[\"seq_sight_load\"] = load  # dataclasses need the module registered\n_spec.loader",1)
+open(p,'w').write(s)
+EOF
+python3 -m unittest tests.test_load tests.test_inspect_jena 2>&1 | tail -60
+
+OUT
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_fresh_upload_in_bounded_batches (tests.test_load.Upload.test_fresh_upload_in_bounded_batches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_other_data_versions_are_ignored (tests.test_load.Upload.test_other_data_versions_are_ignored)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_post_upload_verification_detects_missing_rows (tests.test_load.Upload.test_post_upload_verification_detects_missing_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_rerun_is_idempotent (tests.test_load.Upload.test_rerun_is_idempotent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_resume_after_interruption_creates_no_duplicates (tests.test_load.Upload.test_resume_after_interruption_creates_no_duplicates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+======================================================================
+ERROR: test_rows_contain_only_expected_columns_and_naive_timestamps (tests.test_load.Upload.test_rows_contain_only_expected_columns_and_naive_timestamps)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emmarogoveanu/Documents/GitHub/cst-435-topic-4-seq-sight/tests/test_load.py", line 321, in setUp
+    self.make({"mpi_roof_2020a.zip": synthetic_rows(500, missing={100})})
+                                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+TypeError: synthetic_rows() got an unexpected keyword argument 'missing'
+
+----------------------------------------------------------------------
+Ran 43 tests in 0.591s
+
+FAILED (errors=9)
+6:57 PM
+Test-helper keyword bug; fix and rerun.
+
+
+
+Bash
+IN
+sed -i 's/synthetic_rows(500, missing={100})/synthetic_rows(500, missing_hours={100})/; s/synthetic_rows(n_hours, missing)/synthetic_rows(n_hours, missing_hours=missing)/' tests/test_load.py && python3 -m unittest tests.test_load tests.test_inspect_jena 2>&1 | grep -v "^  File\|^    " | tail -40
+
+OUT
+Exit code 1
+sed: 2: "tests/test_load.py
+": undefined label 'ests/test_load.py'
+Bash
+IN
+python3 - <<'EOF'
+p='tests/test_load.py'
+s=open(p).read()
+s=s.replace("synthetic_rows(500, missing={100})","synthetic_rows(500, missing_hours={100})").replace("synthetic_rows(n_hours, missing)","synthetic_rows(n_hours, missing_hours=missing)")
+open(p,'w').write(s)
+EOF
+python3 -m unittest tests.test_load tests.test_inspect_jena 2>&1 | grep -v "^  File" | tail -40
+
+OUT
+...........................................
+----------------------------------------------------------------------
+Ran 43 tests in 0.908s
+
+OK
+Bash
+IN
+python3 - <<'EOF'
+p='tests/test_load.py'
+s=open(p).read()
+s=s.replace("        self.assertEqual(p.valid_hours, 200 - 0)  # the first label has no ... see grid test\n","        self.assertEqual(p.valid_hours, 200)\n")
+s=s.replace("        self.assertEqual(n, 400 - 0 if p.first_hour == T0 + timedelta(hours=1) else n)\n","        self.assertEqual(n, 400)\n")
+open(p,'w').write(s)
+EOF
+python3 -m unittest tests.test_load tests.test_inspect_jena 2>&1 | tail -3
+time python3 -m db.load 2>&1 | tail -30; git status --short
+
+OUT
+Ran 43 tests in 0.958s
+
+OK
+data_version: jena-mpi-roof-h1-60138aac7d898b8c
+source: 43 archives (SHA-256 and row counts match the manifest), 1,162,360 data rows
+  unique timestamps: 1,161,882
+  duplicate rows collapsed: 478 (timestamps duplicated across archives: 144, within one archive: 334); conflicting duplicates: 0
+  off-grid timestamps excluded: 2 ['2004-12-07 02:00:30', '2005-01-28 20:10:20']
+  invalid temperature values (unique timestamps): {'sentinel_-9999': 548}
+hourly grid 2003-11-24 17:00:00 .. 2026-01-01 00:00:00: 193,760 hours
+  valid hours: 193,548   invalid hours (excluded, not filled): 212
+splits (hour-end labels, naive station time; cut on the full grid at 70% / 85%):
+  train      2003-11-24 17:00:00 .. 2019-05-16 00:00:00  grid_hours=135,632 rows=135,438 windows(72->24)=134,678 longest_run=31,582
+  validation 2019-05-16 01:00:00 .. 2022-09-08 00:00:00  grid_hours=29,064 rows=29,047 windows(72->24)=28,762 longest_run=19,281
+  test       2022-09-08 01:00:00 .. 2026-01-01 00:00:00  grid_hours=29,064 rows=29,063 windows(72->24)=28,873 longest_run=23,582
+rows to upload: 193,548   total valid 72->24 windows: 192,313
+matches docs/dataset-card.md: yes
+DRY-RUN: no credentials used, no network, nothing written. Use --upload to load.
+python3 -m db.load 2>&1  16.35s user 0.75s system 97% cpu 17.583 total
+tail -30  0.00s user 0.00s system 0% cpu 17.582 total
+ M .gitignore
+ M README.md
+?? .env.example
+?? ai-documentation/
+?? db/load.py
+?? db/migrations/002_seq_sight_forecasting.sql
+?? db/validation/
+?? docs/supabase-setup.md
+?? tests/test_load.py
+Bash
+IN
+python3 - <<'EOF'
+p='docs/supabase-setup.md'
+s=open(p).read()
+a=s.index("> **Status:")
+b=s.index("## Which file to apply")
+status='''## Status
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| `002` applied to the Supabase project | **Reported by the user** | Not independently observed by Claude |
+| RLS enabled, anon read-only grants, the two `SELECT` policies | **Reported by the user** as verified | Not independently observed; Claude has not connected to Supabase |
+| Corpus uploaded to `sequences` | **Not done** | No upload has been run |
+| `db/load.py` dry-run on the real local files | **Executed locally** | Manifest and checksums verified; counts match the dataset card (see below) |
+| `tests/test_load.py` (synthetic preparation, splits, gaps, config, mocked upload/resume) | **Executed locally**: 43 tests pass together with `tests/test_inspect_jena.py` | `python3 -m unittest tests.test_load tests.test_inspect_jena` |
+| `db/load.py --upload` against real Supabase | **Untested** | Only exercised against an in-memory fake store |
+| `db/validation/002_seq_sight_validation.sql` (constraint/FK/JSON behavior) | **Never run** | Needs a disposable local PostgreSQL, which is not installed here |
+| Constraint behavior of `002` (JSON `jsonpath` checks, composite FK, NaN rules) | **Untested** | Same reason |
+
+The applied migration `002` must not be edited. Any future schema change goes in
+a new migration file (`003_…`).
+
+'''
+s=s[:a]+status+s[b:]
+load_sec='''## Loading the corpus (`db/load.py`)
+
+`db/load.py` reuses the verified preparation functions in
+[scripts/inspect_jena.py](../scripts/inspect_jena.py) (it does not reimplement
+them) and adds manifest verification, per-hour split assignment, the data-version
+id and the upload.
+
+**Dry-run (default).** Needs no credentials and no network, imports no database
+library, writes nothing. From the repo root, with the ZIPs in `data/raw/mpi_roof/`:
+
+```bash
+python3 -m db.load
+```
+
+It verifies the 43 archives (file set, SHA-256, row counts) against
+[jena-mpi-roof-checksums.txt](jena-mpi-roof-checksums.txt), then applies the
+cleanup rules in [data design](data-design.md) and prints source counts,
+duplicates and off-grid timestamps, valid/invalid hours, split boundaries,
+per-split row counts and 72→24 window counts, and whether they match the
+[dataset card](dataset-card.md). Any mismatch or conflicting duplicate exits
+with status 2. Dry-run takes about 20 seconds.
+
+Real local dry-run result (executed 2026-10-24 on this machine): 1,162,360 rows;
+193,760 grid hours, 193,548 valid, 212 invalid; train 135,438 / validation
+29,047 / test 29,063 rows; 134,678 / 28,762 / 28,873 windows; matches the
+dataset card.
+
+**Data version.** `jena-mpi-roof-h1-<16 hex>` is a hash of the per-file SHA-256s
+plus every preparation setting (hour rule, 72/24, sentinel, split fractions,
+`PREP_VERSION`). Changing the source files or any rule changes the id, so old and
+new corpora can coexist under `UNIQUE (data_version, station_ts)`. Current value:
+`jena-mpi-roof-h1-60138aac7d898b8c`.
+
+**Upload (later; not yet run).** Prerequisites: `pip install supabase`
+(pinned in [api/requirements.txt](../api/requirements.txt)), and a git-ignored
+`.env` made from [.env.example](../.env.example) with the real project URL and
+service-role key. Then:
+
+```bash
+python3 -m db.load --upload                 # default batches of 1000
+python3 -m db.load --upload --batch-size 500
+```
+
+Behavior:
+
+- Configuration is validated first (https URL, key present and not a
+  placeholder) and values are never printed; error text redacts them.
+- It reads the rows already stored for this `data_version` and compares them
+  with the prepared data. Identical rows are skipped; only missing rows are
+  inserted, with plain `INSERT` in batches (1–5000 rows), never an upsert.
+- If a stored row for this data version differs in temperature (beyond 1e-9,
+  which only absorbs float round-tripping) or split, or is not in the prepared
+  data, it aborts with no changes. It never updates or deletes.
+- An interrupted upload is resumed by running the same command again.
+- Afterwards it checks the per-split row counts in the database.
+
+`station_ts` is sent as a naive ISO string (`2020-01-01T01:00:00`) with no offset.
+
+'''
+s=s.replace("## Behavior tests (not yet run)",load_sec+"## Behavior tests (not yet run)",1)
+open(p,'w').write(s)
+EOF
+grep -n "^## " docs/supabase-setup.md; sed -n 1,8p docs/supabase-setup.md
+
+OUT
+5:## Status
+21:## Which file to apply
+41:## Expected tables
+50:## Differences from Artzi's original `001_init.sql`
+129:## Public-access boundary
+147:## Loading the corpus (`db/load.py`)
+205:## Behavior tests (not yet run)
+222:## Read-only verification SQL
+320:## Starter application is not compatible yet
+339:## Configuration
+# Supabase Setup — Seq Sight Forecasting Schema
+
+Back to [README](../README.md) · See also [data design](data-design.md).
+
+## Status
+
+| Item | Status | Evidence |
+|------|--------|----------|
+Bash
+IN
+python3 - <<'EOF'
+p='docs/supabase-setup.md'
+s=open(p).read()
+s=s.replace("None of these have been changed, and the loader (`db/load.py`) does not exist yet.","None of these have been changed. The loader `db/load.py` is new and independent of them.")
+s=s.replace("On the fresh Supabase project, apply **one** file:","On the fresh Supabase project, **one** file was to be applied (the user reports `002` has been applied):")
+open(p,'w').write(s)
+EOF
+git diff --stat; git status --short db/migrations
+
+OUT
+ .gitignore | 6 ++++++
+ README.md  | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+?? db/migrations/002_seq_sight_forecasting.sql
+6:58 PM
+db/load.py is written. The dry-run works on the real local files, and the new synthetic tests pass. The upload path has only run against a mock; it has never touched Supabase. I made no network or Supabase connections and read no credentials. I didn't touch the migration, install anything, commit or push.
+
+Dry-run
+Run it with python3 -m db.load from the repo root. It reuses the preparation functions from scripts/inspect_jena.py rather than reimplementing them.
+
+I ran it on the real files, and the counts match the dataset card:
+
+It verified all 43 archives against the checksum manifest, including row counts. They hold 1,162,360 rows, with 478 duplicates collapsed, 0 conflicts and 2 off-grid timestamps excluded.
+The hourly grid has 193,760 hours: 193,548 valid and 212 invalid.
+Rows per split are 135,438 train, 29,047 validation and 29,063 test.
+Valid 72→24 windows are 134,678, 28,762 and 28,873, for 192,313 in total.
+The data version is jena-mpi-roof-h1-60138aac7d898b8c. It hashes the per-file checksums plus every preparation setting, so changing either changes the id.
+It takes about 20 seconds. I didn't separately confirm that it makes no network requests; a test blocks sockets and the database imports during a synthetic dry-run.
+Upload
+The command is python3 -m db.load --upload, with an optional --batch-size between 1 and 5000 (default 1000).
+
+Credentials: it reads SUPABASE_URL and SUPABASE_SERVICE_KEY from the ignored .env and checks them (https URL, key not a placeholder) without printing them. Error text hides them.
+Writes: it compares what is already stored for this data version with the prepared rows. It skips identical rows and inserts only the missing ones in batches, using plain inserts, never upserts.
+Safety: if a stored row differs in temperature or split, or isn't in the prepared set, it stops and changes nothing. Re-running the same command resumes an interrupted upload.
+Check: at the end it compares the per-split row counts in the database with the prepared counts.
+Dependency: supabase isn't installed in this environment, so I couldn't try the real client. Run pip install supabase before the first real upload.
+Checks that passed
+python3 -m unittest tests.test_load tests.test_inspect_jena ran 43 tests, all passing. 24 of those are new, in tests/test_load.py. They cover:
+manifest tampering and missing files;
+duplicates, conflicts and off-grid records;
+the six-reading hourly rule and invalid hours;
+split boundaries, gaps and windows;
+config validation and redaction;
+upload batching, resume, idempotence, conflicts and verification, using an in-memory fake store.
+The tests use unittest because pytest isn't installed here. They should also run under pytest, but I haven't tried.
+Still untested
+The real --upload against Supabase. The Supabase client calls (the paged read, the insert, and count="exact") have only been checked against the fake store.
+The migration's behavior, including the SQL validation script. No PostgreSQL is installed here.
+That 002 is applied and its RLS, grants and policies are correct. I'm relying on your report, and docs/supabase-setup.md now has a status table separating what you reported from what I ran. It also has the exact dry-run and upload commands.
+
+
