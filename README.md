@@ -97,7 +97,7 @@ Nothing below has been verified complete.
 
 ## Model comparison
 
-_Not yet available._ This table will be generated from persisted test MAE via SQL.
+_Not yet available._ This table will be generated from persisted test MAE via SQL. The read-only query is prepared in [docs/model-comparison.sql](docs/model-comparison.sql) and has not been executed.
 
 | Model | Test MAE |
 |-------|----------|

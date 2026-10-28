@@ -97,4 +97,6 @@ Without run ids the server starts, `/healthz` returns 503 and prediction endpoin
 
 **Tested** (`tests/test_forecast_api.py`, synthetic untrained artifacts, in-memory fake repository, a fake Supabase client): validation, response shapes, scaler/eval-mode inference, hash format, logging and run linkage, batch success/422/207/503, pagination bounds, readiness reasons and recovery, registration mismatches, `/version` leaking no paths, registration planning/refusal/idempotency/cleanup, repository laziness and error sanitizing. The real seed-0 artifacts were also loaded and run once locally.
 
+**Live integration:** an opt-in test of `POST /predict` logging against a real test project, the CI workflows and their status are described in [integration-testing.md](integration-testing.md); that test has **not been run**.
+
 **Not tested / remaining:** anything against a real Supabase (query shapes were checked only against a recording stub; the `predictions` JSON/foreign-key checks are untested end to end); the registration `--execute` path and the Render deployment with the download-from-`run_artifacts` path were exercised by the user (reported working) and are covered here only by mocks; see [render-deployment.md](render-deployment.md); concurrency and latency under load; response size of large batches (32 attention items ≈ 1.6 MB).
