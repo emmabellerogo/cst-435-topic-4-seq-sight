@@ -186,4 +186,5 @@ class Version(BaseModel):
     max_batch_size: int
     input_hash_format: str
     artifacts_are_development_defaults: bool
+    artifact_source: str
     models: Dict[str, ServedModelVersion]

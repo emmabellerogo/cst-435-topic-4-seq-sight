@@ -1,21 +1,40 @@
-# Render.com blueprint for the FastAPI model service (Cloud #2).
-# In the Render dashboard: New -> Blueprint -> point at this repo.
-# Set SUPABASE_URL and SUPABASE_SERVICE_KEY as environment variables (secrets)
-# in the service settings after the first deploy.
+# Render Blueprint for the Seq Sight FastAPI service (Cloud #2). NOT DEPLOYED, NOT TESTED ON RENDER.
+# Structure adapted from the professor-provided Attend-It template; Seq Sight's config is our own.
+# Step-by-step instructions, env-var meanings, rollback: docs/render-deployment.md
+# Syntax checked against Render's Blueprint spec and render.yaml JSON schema (sources in that doc).
+#
+# This file contains NO secrets and NO run ids. Set these in the Render dashboard:
+#   SUPABASE_URL, SUPABASE_SERVICE_KEY   (prompted at first Blueprint creation: sync: false)
+#   FORECAST_LSTM_RUN_ID, FORECAST_ATTENTION_RUN_ID   (add AFTER run registration; never guessed)
+# The Streamlit UI is a separate deployment (Streamlit Community Cloud) and is not part of this file.
 services:
   - type: web
-    name: attend-it-api
+    name: seq-sight-api
     runtime: python
     plan: free
-    buildCommand: "pip install -r api/requirements.txt"
-    startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
-    healthCheckPath: /healthz
+    # CPU-only torch first, from PyTorch's CPU index (the PyPI Linux wheel of torch 2.4.1 depends on
+    # CUDA packages, hundreds of MB we do not need). The requirements file then sees torch==2.4.1
+    # already satisfied (2.4.1+cpu matches ==2.4.1). Pins in api/requirements.txt are unchanged.
+    buildCommand: >-
+      pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu &&
+      pip install -r api/requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    # /livez = process is up. Readiness truth (registered models, database) is /healthz, which returns 503
+    # until true. See docs/render-deployment.md for why the platform check uses /livez.
+    healthCheckPath: /livez
+    autoDeployTrigger: "off"
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.9"
+        value: "3.12.14"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
+      - key: FORECAST_ARTIFACT_SOURCE
+        value: supabase
+      - key: FORECAST_ARTIFACT_CACHE_DIR
+        value: /tmp/seqsight-artifacts
+      - key: FORECAST_RETRY_COOLDOWN_S
+        value: "30"
       - key: ALLOWED_ORIGINS
         value: "*"

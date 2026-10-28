@@ -1,6 +1,6 @@
 # Model Card — Seq Sight
 
-> Status: draft for review. Test-set results do not exist yet; nothing below reports a test figure. Facts marked *(validation)* come from the validation split only. Supabase schema, access policies, and corpus upload were verified by the user. Forecast serving, run registration, and prediction logging have not yet been tested against live Supabase. The UI was opened locally; deployed services remain untested.
+> Status: draft for review. Test-set results do not exist yet; nothing below reports a test figure. Facts marked *(validation)* come from the validation split only. The user verified the Supabase schema, access permissions, corpus upload and split counts. Model registration, artifact retrieval, forecast serving and prediction logging have not been tested against live Supabase. The UI was opened locally; deployed services remain untested.
 
 ## Model details
 - **Task:** forecast hourly air temperature (°C) for the next **24 hours** from the previous **72 hours**.
@@ -42,7 +42,7 @@ Entry (i, j) says how much the encoder's representation of input hour *i* draws 
 ## Persistence and privacy
 - Every served forecast is stored in Supabase `predictions`: the **SHA-256 hash of the input** (not the input), the 24 forecast values, the 72×72 attention matrix for the attention model, the model type, the serving run id and a timestamp. No user identifier, IP address or raw input is stored.
 - **That table is publicly readable** with the project's anon key, which ships with the app. A hash does not make an input private: it can be recomputed from a guessed input. Do not enter data that must stay confidential.
-- **Current state:** model weights are saved only as local files on the development machine. Registering runs and artifacts in Supabase (`runs`, `run_artifacts`) is pending, so run registration and artifact storage have not been tested against live Supabase.
+- **Current state:** model weights are saved only as local files on the development machine. Registering runs and artifacts in Supabase (`runs`, `run_artifacts`) is pending, so run registration and artifact storage have not been tested against live Supabase. (The schema, permissions and corpus upload were verified by the user.)
 - Design: weights go in `run_artifacts`, which the anon key cannot read, and the service-role key is used only by the API server.
 
 ## Ethical considerations

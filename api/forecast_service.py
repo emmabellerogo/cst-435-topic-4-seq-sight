@@ -34,12 +34,14 @@ import hashlib
 import math
 import subprocess
 import threading
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 import torch
 
+from api.artifact_store import ArtifactError, ensure_artifact
 from api.forecast_config import ForecastSettings
 from shared.forecast_models import INPUT_HOURS, MODEL_TYPES, TARGET_HOURS
 from shared.forecast_training import load_artifact
@@ -159,29 +161,56 @@ class _Slot:
 
 
 class ForecastService:
+    PING_TTL_S = 10.0
+
     def __init__(self, settings: ForecastSettings, repo):
         self.settings, self.repo = settings, repo
         self._lock = threading.Lock()
+        self._last_attempt: Optional[float] = None
+        self._ping: Optional[tuple] = None          # (monotonic time, result)
+        self.startup_done = threading.Event()
+        initial = "starting" if settings.artifact_source == "supabase" else "not_loaded"
         self._slots: Dict[str, _Slot] = {
-            k: _Slot(k, settings.models[k].run_id, reason="not_loaded") for k in MODEL_TYPES}
+            k: _Slot(k, settings.models[k].run_id, reason=initial) for k in MODEL_TYPES}
 
     # ------------------------------------------------------------ startup
     def startup(self) -> None:
-        """Load every artifact once, then try to verify run registration."""
-        for kind, slot in self._slots.items():
-            cfg = self.settings.models[kind]
-            try:
-                slot.loaded = load_model(kind, cfg.artifact_path)
-                slot.reason = None
-            except ServeError as e:
-                slot.reason = e.code
-        self.verify_registration()
+        """Load what can be loaded once, then try to verify registration. Never raises."""
+        try:
+            if self.settings.config_error:
+                for slot in self._slots.values():
+                    slot.reason = self.settings.config_error
+                return
+            if self.settings.artifact_source == "local":
+                for kind, slot in self._slots.items():
+                    try:
+                        slot.loaded = load_model(kind, self.settings.models[kind].artifact_path)
+                        slot.reason = None
+                    except ServeError as e:
+                        slot.reason = e.code
+            self.verify_registration(force=True)
+        finally:
+            self.startup_done.set()
 
-    def verify_registration(self) -> None:
-        """(Re)check unverified models against persisted runs. Cheap when all are ready."""
-        with self._lock:
+    def verify_registration(self, force: bool = False) -> None:
+        """Check (and, for the supabase source, fetch) models that are not ready yet.
+
+        Retries are rate limited to one pass per ``retry_cooldown_s`` so that frequent
+        health checks cannot hammer the database; a pass already running is not duplicated.
+        """
+        if self.settings.config_error or not self._lock.acquire(blocking=False):
+            return
+        try:
+            now = time.monotonic()
+            if all(s.ready for s in self._slots.values()):
+                return
+            if not force and self._last_attempt is not None \
+                    and now - self._last_attempt < self.settings.retry_cooldown_s:
+                return
+            self._last_attempt = now
+            remote = self.settings.artifact_source == "supabase"
             for kind, slot in self._slots.items():
-                if slot.ready or slot.loaded is None:
+                if slot.ready or (slot.loaded is None and not remote):
                     continue
                 cfg = self.settings.models[kind]
                 if cfg.run_id_error:
@@ -198,8 +227,20 @@ class ForecastService:
                 if row is None:
                     slot.reason = "run_not_found"
                     continue
+                if slot.loaded is None:            # supabase source: fetch, hash-check, then load
+                    try:
+                        path = ensure_artifact(self.repo, slot.run_id, row, self.settings.cache_dir)
+                        slot.loaded = load_model(kind, path)
+                    except ArtifactError as e:
+                        slot.reason = e.code
+                        continue
+                    except ServeError as e:
+                        slot.reason = e.code
+                        continue
                 mismatch = check_run_matches(slot.loaded, row)
                 slot.reason, slot.ready = mismatch, mismatch is None
+        finally:
+            self._lock.release()
 
     # ---------------------------------------------------------- accessors
     def require_ready(self, model_type: str) -> LoadedModel:
@@ -216,6 +257,13 @@ class ForecastService:
     def served_run_ids(self) -> set:
         return {s.run_id for s in self._slots.values() if s.ready}
 
+    def database_ok(self) -> bool:
+        ttl = min(self.PING_TTL_S, self.settings.retry_cooldown_s)
+        now = time.monotonic()
+        if self._ping is None or now - self._ping[0] >= ttl:
+            self._ping = (now, bool(self.repo.ping()))
+        return self._ping[1]
+
     def readiness(self) -> Dict[str, Any]:
         self.verify_registration()
         models = {k: {"artifact_loaded": s.loaded is not None,
@@ -223,7 +271,7 @@ class ForecastService:
                       "ready": s.ready, "reason": s.reason}
                   for k, s in self._slots.items()}
         return {"ready": all(m["ready"] for m in models.values()),
-                "database": self.repo.ping(), "models": models}
+                "database": self.database_ok(), "models": models}
 
     def version_info(self) -> Dict[str, Any]:
         models = {}

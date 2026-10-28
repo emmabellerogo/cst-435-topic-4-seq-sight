@@ -46,6 +46,7 @@ class FakeRepo:
         self.db_up = True
         self.fail_insert_on = set()        # 0-based insert attempt numbers that fail
         self.insert_attempts = 0
+        self.b64 = {}
 
     def add_run(self, run_id, kind, artifact: Path, **over):
         _, scaler, meta = ft.load_artifact(artifact)
@@ -64,6 +65,11 @@ class FakeRepo:
         if not self.db_up:
             raise RepositoryError("down")
         return self.runs.get(run_id)
+
+    def get_run_artifact(self, run_id):
+        if not self.db_up:
+            raise RepositoryError("down")
+        return self.b64.get(run_id)
 
     def list_runs(self, limit, offset):
         if not self.db_up:
@@ -101,7 +107,8 @@ def artifacts(tmp_path_factory):
 
 def settings_for(artifacts, run_ids=RUN_IDS, **paths):
     return ForecastSettings({k: ModelSetting(Path(paths.get(k, artifacts / f"{k}.pt")), run_ids.get(k),
-                                             path_is_default=False) for k in fm.MODEL_TYPES})
+                                             path_is_default=False) for k in fm.MODEL_TYPES},
+                            retry_cooldown_s=0)
 
 
 @pytest.fixture

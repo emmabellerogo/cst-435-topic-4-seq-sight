@@ -21,6 +21,8 @@ The FastAPI service in `api/` serves the trained LSTM and self-attention models.
 |---|---|---|
 | `FORECAST_LSTM_ARTIFACT` / `FORECAST_ATTENTION_ARTIFACT` | artifact path (relative paths resolve from the repo root) | `artifacts/epoch50/final/{lstm,attention}_seed0.pt` |
 | `FORECAST_LSTM_RUN_ID` / `FORECAST_ATTENTION_RUN_ID` | `runs.id` registered for that artifact | **none** (required) |
+| `FORECAST_ARTIFACT_SOURCE` | `local` files, or `supabase` (download from `run_artifacts`, hash-verified, see [render-deployment.md](render-deployment.md)) | `local` |
+| `FORECAST_ARTIFACT_CACHE_DIR`, `FORECAST_RETRY_COOLDOWN_S` | download cache; seconds between registration/download retries | temp dir; 30 |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | database access (server side only) | none |
 | `ALLOWED_ORIGINS` | CORS | `*` |
 
@@ -38,6 +40,7 @@ Each served artifact must be mapped to a database run **by configuration**; run 
 | `POST /predict_batch` | `{"model_type", "histories_c": [[72 numbers], ...]}`, **1 to 32 histories** |
 | `GET /predictions?limit=20&offset=0&include_attention=false` | newest first; `limit` 1–100, `offset` 0–10 000; `has_more` instead of a total |
 | `GET /runs?limit=20&offset=0` | persisted runs, newest first; `served_by_this_api` marks the served ones |
+| `GET /livez` | process liveness only (200 while the process runs); says nothing about models |
 | `GET /healthz` | 200 only if the database answers and both models are ready; otherwise 503 with per-model reasons |
 | `GET /version` | API/git/torch versions, limits, hash format, per-model run id, seed, data version, validation MAE, artifact hash prefix; no paths or credentials |
 
@@ -94,4 +97,4 @@ Without run ids the server starts, `/healthz` returns 503 and prediction endpoin
 
 **Tested** (`tests/test_forecast_api.py`, synthetic untrained artifacts, in-memory fake repository, a fake Supabase client): validation, response shapes, scaler/eval-mode inference, hash format, logging and run linkage, batch success/422/207/503, pagination bounds, readiness reasons and recovery, registration mismatches, `/version` leaking no paths, registration planning/refusal/idempotency/cleanup, repository laziness and error sanitizing. The real seed-0 artifacts were also loaded and run once locally.
 
-**Not tested / remaining:** anything against a real Supabase (query shapes were checked only against a recording stub; the `predictions` JSON/foreign-key checks are untested end to end); the registration `--execute` path against the real database; executing the test evaluation (the script exists and is tested on synthetic data only); choosing the deployment models; getting artifacts onto Render (`artifacts/` is git-ignored, and `run_artifacts.model_b64` is stored but not read by the API); `render.yaml` still describes Attend-It; concurrency and latency under load; response size of large batches (32 attention items ≈ 1.6 MB).
+**Not tested / remaining:** anything against a real Supabase (query shapes were checked only against a recording stub; the `predictions` JSON/foreign-key checks are untested end to end); the registration `--execute` path against the real database; executing the test evaluation (the script exists and is tested on synthetic data only); choosing the deployment models; Render deployment and the download-from-`run_artifacts` path (implemented and tested with mocks only; see [render-deployment.md](render-deployment.md)); `render.yaml` still describes Attend-It; concurrency and latency under load; response size of large batches (32 attention items ≈ 1.6 MB).

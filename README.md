@@ -18,7 +18,7 @@ a forecast.
 > a view of which past hours influenced it, so that I can plan events while
 > understanding the forecast's limitations.
 
-**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md) · [Supabase setup (migration for review)](docs/supabase-setup.md) · [Forecasting preprocessing](docs/forecasting-preprocessing.md) · [Forecasting models](docs/forecasting-models.md) · [Training workflow](docs/forecasting-training.md) · [Training review (50-epoch runs)](docs/training-review.md) · [Forecasting API](docs/forecasting-api.md) · [Streamlit UI](docs/ui.md)
+**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md) · [Supabase setup (migration for review)](docs/supabase-setup.md) · [Forecasting preprocessing](docs/forecasting-preprocessing.md) · [Forecasting models](docs/forecasting-models.md) · [Training workflow](docs/forecasting-training.md) · [Training review (50-epoch runs)](docs/training-review.md) · [Forecasting API](docs/forecasting-api.md) · [Streamlit UI](docs/ui.md) · [Render deployment (untested)](docs/render-deployment.md)
 
 ## What exists today vs. what is planned
 

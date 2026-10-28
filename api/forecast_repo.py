@@ -27,6 +27,10 @@ class ForecastRepository(Protocol):
 
     def list_runs(self, limit: int, offset: int) -> List[Dict[str, Any]]: ...
 
+    def get_run_artifact(self, run_id: int) -> Optional[str]:
+        """Base64 text of the run's artifact from private ``run_artifacts``, or None."""
+        ...
+
     def insert_prediction(self, *, input_hash: str, forecast: List[float],
                           attention: Optional[List[List[float]]], model_type: str,
                           served_by_run_id: int) -> Dict[str, Any]:
@@ -38,9 +42,14 @@ class ForecastRepository(Protocol):
         ...
 
 
+REQUEST_TIMEOUT_S = 20   # bounded network time for every PostgREST call (supabase-py defaults to 120)
+
+
 def _default_client():
     from supabase import create_client
-    return create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+    from supabase.lib.client_options import ClientOptions
+    return create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"],
+                         options=ClientOptions(postgrest_client_timeout=REQUEST_TIMEOUT_S))
 
 
 class SupabaseForecastRepository:
@@ -70,6 +79,11 @@ class SupabaseForecastRepository:
         data = self._run("get_run", lambda c: c.table("runs").select(RUN_COLUMNS)
                          .eq("id", run_id).limit(1).execute().data)
         return data[0] if data else None
+
+    def get_run_artifact(self, run_id: int) -> Optional[str]:
+        data = self._run("get_run_artifact", lambda c: c.table("run_artifacts").select("model_b64")
+                         .eq("run_id", run_id).limit(1).execute().data)
+        return data[0]["model_b64"] if data else None
 
     def list_runs(self, limit: int, offset: int) -> List[Dict[str, Any]]:
         return self._run("list_runs", lambda c: c.table("runs").select(RUN_COLUMNS)

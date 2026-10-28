@@ -19,6 +19,7 @@ written. If the write fails the forecast is withheld and the response says so.
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -56,7 +57,14 @@ def create_app(settings: Optional[ForecastSettings] = None,
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        service.startup()   # never raises: failures become readiness reasons
+        if settings.artifact_source == "supabase":
+            # Network fetches are bounded but can take a while: open the port first so the
+            # platform sees the process alive; /healthz reports "starting" until this finishes.
+            t = threading.Thread(target=service.startup, name="seqsight-startup", daemon=True)
+            _app.state.startup_thread = t
+            t.start()
+        else:
+            service.startup()   # local files only; never raises: failures become readiness reasons
         yield
 
     app = FastAPI(
@@ -167,6 +175,12 @@ def create_app(settings: Optional[ForecastSettings] = None,
         return RunPage(items=items, limit=limit, offset=offset, has_more=len(rows) > limit)
 
     # ------------------------------------------------------------------- ops
+    @app.get("/livez", tags=["ops"])
+    def livez() -> dict:
+        """Process liveness ONLY (used by the Render health check). It says nothing about whether any
+        model is registered or serving: that is /healthz, which returns 503 until it is true."""
+        return {"status": "alive"}
+
     @app.get("/healthz", response_model=Health, tags=["ops"],
              responses={503: {"model": Health}})
     def healthz(response: Response) -> Health:
@@ -183,6 +197,7 @@ def create_app(settings: Optional[ForecastSettings] = None,
                        input_hours=INPUT_HOURS, forecast_hours=TARGET_HOURS, max_batch_size=MAX_BATCH_SIZE,
                        input_hash_format=HASH_FORMAT,
                        artifacts_are_development_defaults=settings.artifacts_are_development_defaults,
+                       artifact_source=settings.artifact_source,
                        models=service.version_info())
 
     return app

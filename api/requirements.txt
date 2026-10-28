@@ -2,7 +2,8 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 pydantic==2.9.2
-# CPU-only torch keeps the Render build small and free-tier friendly.
+# NOTE: on Linux x86_64, PyPI's torch==2.4.1 depends on CUDA packages. render.yaml installs the CPU build
+# from PyTorch's CPU index first (same version, +cpu), so this pin is unchanged. See docs/render-deployment.md.
 torch==2.4.1
 numpy==1.26.4
 supabase==2.7.4
