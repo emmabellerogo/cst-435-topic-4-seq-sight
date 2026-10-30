@@ -356,6 +356,32 @@ def load_examples(text: Optional[str]) -> Dict[str, Any]:
     return result
 
 
+def describe_attention_summary(s: Any) -> Optional[str]:
+    """One-paragraph reading of a measured ``attention_summary`` (see scripts/curate_forecast_examples.py).
+
+    Fields: ``last_row_*`` describe row 71 (the final input hour attending over all 72 inputs);
+    ``mean_weight_received_by_last_24h`` is the column mean (over all 72 rows) summed over the last 24
+    columns; entropies are per-row means in nats (uniform = ln 72). Returns None if a field is missing.
+    """
+    try:
+        w24, wmax = float(s["last_row_weight_on_last_24h"]), float(s["last_row_max_weight"])
+        ago, recv = int(s["last_row_argmax_hours_before_last_input"]), float(s["mean_weight_received_by_last_24h"])
+        ent, uni = float(s["mean_row_entropy_nats"]), float(s["uniform_row_entropy_nats"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if not (0 < uni and all(math.isfinite(v) for v in (w24, wmax, recv, ent))):
+        return None
+    even = 24 / INPUT_HOURS
+    spread = ("close to evenly spread" if ent >= 0.95 * uni
+              else "concentrated on some hours rather than evenly spread")
+    where = "on the last input hour" if ago == 0 else f"{ago} h before the last input hour"
+    return (f"Reading the heatmap: the final input hour puts {w24:.0%} of its weight on the most recent 24 hours "
+            f"(an even spread would be {even:.0%}); its largest single weight is {wmax:.2f}, {where}. Averaged "
+            f"over all 72 rows, the last 24 hours receive {recv:.0%} of the weight. Mean row entropy is "
+            f"{ent:.2f} nats against {uni:.2f} for a uniform row, so the weights are {spread}. This describes "
+            "input-to-input weights inside the attention block; it is not causal and not a confidence measure.")
+
+
 # -------------------------------------------------------------- concepts example
 def softmax(x: Sequence[float]) -> np.ndarray:
     z = np.asarray(x, dtype=np.float64)

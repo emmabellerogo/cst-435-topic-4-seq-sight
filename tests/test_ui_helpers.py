@@ -342,7 +342,8 @@ def test_app_renders_six_tabs_without_secrets():
     assert [t.label for t in at.tabs] == ["Concepts", "Try It", "Baseline vs. Attention", "Recent Predictions",
                                           "Failure Gallery", "Model Card"]
     text = " ".join(e.value for els in (at.markdown, at.info, at.warning, at.error) for e in els)
-    assert "Predictions work only after" in text
+    assert "Predictions work only after" not in text      # registration warning is no longer unconditional
+    assert any("can take about a minute to wake" in c.value for c in at.caption)
     assert "deliberately shows the attention model's largest validation errors" in text
     assert "0 of 3 documented failures" not in text and "0 of 3 measured comparison examples" not in text
 
@@ -354,3 +355,25 @@ def test_app_renders_attention_heatmap_for_each_comparison_example():
     captions = [c.value for c in at.caption]
     assert sum("not an attribution of any forecast hour" in c for c in captions) == 3
     assert sum("Input-to-input attention; not an explanation of the error." in c for c in captions) == 3
+
+
+def test_describe_attention_summary_uses_measured_fields():
+    summary = {"last_row_argmax_hours_before_last_input": 6, "last_row_max_weight": 0.1419,
+               "last_row_weight_on_last_24h": 0.9219, "mean_weight_received_by_last_24h": 0.7942,
+               "mean_row_entropy_nats": 2.5896, "uniform_row_entropy_nats": 4.2767,
+               "most_attended_column_on_average_hours_before_last_input": 11}
+    text = fc.describe_attention_summary(summary)
+    assert "92%" in text and "33%" in text and "0.14" in text and "6 h before" in text
+    assert "79%" in text and "2.59" in text and "4.28" in text and "concentrated" in text
+    assert "not causal" in text and "not a confidence measure" in text
+
+
+def test_describe_attention_summary_tolerates_bad_input():
+    assert fc.describe_attention_summary(None) is None
+    assert fc.describe_attention_summary({"last_row_max_weight": 0.1}) is None
+
+
+def test_shipped_comparison_examples_have_a_reading():
+    data = json.loads((UI / "content" / "examples.json").read_text(encoding="utf-8"))
+    for ex in data["comparison_examples"]:
+        assert fc.describe_attention_summary(ex["attention_summary"])

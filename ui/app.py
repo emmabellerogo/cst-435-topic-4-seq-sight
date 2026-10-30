@@ -161,9 +161,8 @@ with concepts:
 # ---------------------------------------------------------------------------
 with try_tab:
     st.header("Try it")
-    st.warning("Predictions work only after the trained models are registered in the database and the API has "
-               "been configured with their run ids. Until then the API answers 503 and no forecast is shown "
-               "or stored.")
+    st.caption("Forecasts come from the registered models served by the API. A free-tier API that has been idle "
+               "can take about a minute to wake; use *Check API status* if the first request times out.")
     client_api = api()
     if client_api is None:
         st.error("API_URL is not configured in Streamlit secrets (copy .streamlit/secrets.toml.example at the repository root to .streamlit/secrets.toml).")
@@ -271,6 +270,9 @@ with compare_tab:
             st.caption("Input-to-input attention weights of the attention model for this 72 h history (row i = the hour "
                        "attending, column j = the hour attended to). They are not an attribution of any forecast hour to "
                        "input hours, not an explanation of the forecast, and not a confidence measure.")
+            reading = fc.describe_attention_summary(ex.get("attention_summary"))
+            if reading:
+                st.markdown(reading)
         if ex.get("lstm_mae_c") is not None and ex.get("attention_mae_c") is not None:
             st.caption(f"MAE over these 24 hours: LSTM {ex['lstm_mae_c']:.2f} °C, attention {ex['attention_mae_c']:.2f} °C. "
                        "One validation window, not a ranking of the models. Artifact SHA-256 (prefix): "

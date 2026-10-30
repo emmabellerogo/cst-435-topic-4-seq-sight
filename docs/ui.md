@@ -18,7 +18,8 @@ Back to [README](../README.md) · See also [forecasting API](forecasting-api.md)
 ## Behavior worth knowing
 
 * All API calls go through `ForecastApi` in `ui/forecast_client.py`: connect timeout 5 s, read timeout 60 s (15 s for status). 422 is shown with the API's field messages; 503 "no registered model" is explained as pending registration rather than as a failure; timeouts and 502/503/504 without an API body are reported as a possible cold start; connection errors never echo URLs. "Check API status" polls `/healthz` for up to 90 s.
-* Until the models are registered and the API has run ids (see [forecasting API](forecasting-api.md)), the Try It tab can only show the pending explanation. Recent Predictions and Baseline vs. Attention stay empty until rows exist.
+* The models are registered and served (user-reported). The Try It tab shows the "pending registration" explanation only when the API itself answers that no registered model is ready; a missing `API_URL` shows a configuration error instead. Recent Predictions and Baseline vs. Attention stay empty until rows exist.
+* Under each Baseline vs. Attention heatmap the tab prints a short reading generated from that example's measured `attention_summary` (`describe_attention_summary` in `ui/forecast_client.py`): concentration on the last 24 hours, the largest single weight, and row entropy against uniform. It is descriptive only, not causal and not a confidence measure.
 * The UI refuses a `SUPABASE_ANON_KEY` that is detectably a service-role or secret key. Never put the service-role key in Streamlit secrets.
 * `predictions` and `runs` are publicly readable with the anon key by design (see [Supabase setup](supabase-setup.md)).
 
@@ -44,4 +45,4 @@ Dependencies: `matplotlib==3.9.2` was added. `pyarrow==17.0.0` is a transitive p
 
 **Not tested:** a real browser session; any live API or Supabase call; rendering with real data; Streamlit Community Cloud deployment; how long the free-tier API takes to wake up.
 
-**Content still missing:** the 3–5 minute videos and reports. The three comparison examples and three failure cases are now present (measured offline on validation windows; not yet viewed in a browser by us). README checklist items are deliberately left unchecked.
+**Content status:** the individual video link is recorded in the README (supplied by Emma, not verified by us); the engineering report is an AI-assisted draft pending Emma's review. The three comparison examples and three failure cases are now present (measured offline on validation windows; not yet viewed in a browser by us). README checklist items are deliberately left unchecked.

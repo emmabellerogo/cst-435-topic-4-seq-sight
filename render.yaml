@@ -1,4 +1,4 @@
-# Render Blueprint for the Seq Sight FastAPI service (Cloud #2). NOT DEPLOYED, NOT TESTED ON RENDER.
+# Render Blueprint for the Seq Sight FastAPI service (Cloud #2). Deployed on Render (user-reported working; not independently observed by the assistant).
 # Structure adapted from the professor-provided Attend-It template; Seq Sight's config is our own.
 # Step-by-step instructions, env-var meanings, rollback: docs/render-deployment.md
 # Syntax checked against Render's Blueprint spec and render.yaml JSON schema (sources in that doc).

@@ -10,7 +10,8 @@ _Short name used in this repository: **Seq Sight** (hourly temperature forecasti
 > GitHub Actions; [details](docs/integration-testing.md#live-run-record-user-executed)). An
 > AI-assisted draft of the engineering report is in
 > [docs/engineering-report.md](docs/engineering-report.md) and needs the contributor's review. The
-> video link is not yet in the repository.
+> contributor's video link has been added below; its duration, content and viewing permissions have
+> not been verified by the assistant.
 
 ## Project scope
 
@@ -26,11 +27,11 @@ block, and exposes attention weights so users can see where the encoder's attent
 > a view of which past hours influenced it, so that I can plan events while
 > understanding the forecast's limitations.
 
-**Design docs:** [Data design and forecasting contract (proposed)](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md) · [Supabase setup (migration for review)](docs/supabase-setup.md) · [Forecasting preprocessing](docs/forecasting-preprocessing.md) · [Forecasting models](docs/forecasting-models.md) · [Training workflow](docs/forecasting-training.md) · [Training review (50-epoch runs)](docs/training-review.md) · [Forecasting API](docs/forecasting-api.md) · [Streamlit UI](docs/ui.md) · [Render deployment](docs/render-deployment.md) · [Integration test and CI](docs/integration-testing.md) · [Curated examples](docs/forecasting-examples.md) · [Model-comparison SQL results](docs/results/README.md)
+**Design docs:** [Data design and forecasting contract](docs/data-design.md) · [Dataset card (Jena Climate)](docs/dataset-card.md) · [Supabase setup (migration 002, applied; user-reported)](docs/supabase-setup.md) · [Forecasting preprocessing](docs/forecasting-preprocessing.md) · [Forecasting models](docs/forecasting-models.md) · [Training workflow](docs/forecasting-training.md) · [Training review (50-epoch runs)](docs/training-review.md) · [Forecasting API](docs/forecasting-api.md) · [Streamlit UI](docs/ui.md) · [Render deployment](docs/render-deployment.md) · [Integration test and CI](docs/integration-testing.md) · [Curated examples](docs/forecasting-examples.md) · [Model-comparison SQL results](docs/results/README.md)
 
 ## Starter template vs. Seq Sight
 
-| | Existing: Attend-It starter | Planned: Seq Sight |
+| | Existing: Attend-It starter | Seq Sight (this project) |
 |---|---|---|
 | Origin | Professor-provided template, added in commit `dae6272` | The contributor's assignment work, with documented AI assistance (see below) |
 | Task | Synthetic token-sequence classification | Hourly temperature forecasting (Jena Climate, 24 h horizon) |
@@ -58,9 +59,20 @@ The UI holds no ML code; the API is the only writer to Supabase.
 
 | Tier | Platform | URL |
 |------|----------|-----|
+| Code | GitHub | [github.com/emmabellerogo/cst-435-topic-4-seq-sight](https://github.com/emmabellerogo/cst-435-topic-4-seq-sight) |
 | UI | Streamlit Community Cloud | [cst-435-topic-4-seq-sight-pb5jwfwvdotwudcv9fuifb.streamlit.app](https://cst-435-topic-4-seq-sight-pb5jwfwvdotwudcv9fuifb.streamlit.app/) (user-provided; reported working) |
 | API | Render | [https://seq-sight-api.onrender.com](https://seq-sight-api.onrender.com) (user-confirmed) |
 | Data | Supabase | Project URL `https://vrcdwzypcqkpxetunnxm.supabase.co`, project reference `vrcdwzypcqkpxetunnxm` (user-confirmed; no keys recorded) |
+
+## Data persisted / not persisted
+
+- **Stored in Supabase:** the Jena training corpus (`sequences`), run metrics and hyperparameters (`runs`), model artifacts (`run_artifacts`), and a prediction audit record for every served forecast (`predictions`): input hash, 24 forecast values, attention matrix (attention model only), serving run id and timestamp.
+- **Not stored in the predictions table:** the submitted raw 72-hour temperature history (only its SHA-256 hash), and any user identifier. A hash does not make an input private, because it can be recomputed from a guessed input.
+- **Publicly readable (intended anon policy):** `runs` and `predictions`, including forecasts and attention records. Do not submit confidential data.
+- **Private:** model artifacts (`run_artifacts`) and the corpus (`sequences`) have no anon access; only the API's server-side key writes or reads them.
+- Hosting-platform logs (Render, Streamlit, Supabase) were not inspected and no claim is made about them.
+
+Details: [model card, Persistence and privacy](MODEL_CARD.md#persistence-and-privacy).
 
 ## Implementation checklist
 
@@ -103,7 +115,7 @@ Ticked only where the repository or the user's reported results support it. "Off
 - [x] Uncertainty and risk disclosures ([model card](MODEL_CARD.md))
 
 **Submission**
-- [ ] The contributor's individual 3–5 minute video and 750–1000 word engineering report, with the links filled in below (report: AI-assisted draft saved, **awaiting the contributor's review**; video: pending)
+- [ ] The contributor's individual 3–5 minute video and 750–1000 word engineering report, with the links filled in below (report: AI-assisted draft saved, **awaiting the contributor's review**; video: link added, not verified by the assistant)
 
 ## Model comparison
 
@@ -124,9 +136,20 @@ This project was completed by one person, Emma Rogoveanu, working alone over abo
 
 | Contributor | Video (3–5 min) | Engineering report (750–1000 words) | Contribution evidence |
 |-------------|-----------------|--------------------------------------|-----------------------|
-| Emma Rogoveanu | _Link pending_ | [docs/engineering-report.md](docs/engineering-report.md) (**AI-assisted draft, awaiting the contributor's review**) | This README and the AI-assistance log; commit history; [docs/results/](docs/results/README.md) |
+| Emma Rogoveanu | [Emma Rogoveanu — Product Demonstration](https://www.loom.com/share/2c4aebe3ddad42808a0758bc4bda2c57) (link supplied by Emma; duration, content and viewing permissions not verified by the assistant) | [docs/engineering-report.md](docs/engineering-report.md) (**AI-assisted draft, awaiting the contributor's review**) | This README and the AI-assistance log; commit history; [docs/results/](docs/results/README.md) |
 
-The engineering report is an **AI-assisted draft**: Claude Code drafted it from the contributor's project evidence and the contributor's own personal worldview reflection, and the contributor must review it for accuracy and confirm that it expresses their views before it is submitted as their own. No video exists yet; none has been drafted here.
+The engineering report is an **AI-assisted draft**: Claude Code drafted it from the contributor's project evidence and the contributor's own personal worldview reflection, and the contributor must review it for accuracy and confirm that it expresses their views before it is submitted as their own. The video is Emma's own recording, linked in the table above; the AI did not draft or produce it, and the assistant has not viewed it.
+
+### Contribution summary
+
+- Emma Rogoveanu completed Seq Sight alone (user-stated); there is no partner or division of work.
+- Scope: she chose Variant A (Jena Climate, 72 h input, 24 h forecast) and the customer story.
+- Starter: the professor-provided Attend-It template supplied the three-cloud structure and scaffolding; the Seq Sight data, models, API, UI and documentation replaced its classification parts.
+- Data: she reports applying schema `002` and uploading the corpus to Supabase, and verifying access and split counts (user-reported).
+- Models: an LSTM baseline and a hand-written scaled-dot-product attention model, six 50-epoch runs (three seeds each); she reports Professor Artzi approved the training approach (user-reported).
+- Deployment and results: she ran the comparison SQL and reports registered runs and a working Streamlit, Render and Supabase deployment (user-reported). She ran the live integration test locally (2 passed, 2026-10-28; user-reported) and reports green CI.
+- AI assistance: Claude Code drafted the code, tests, workflows, documentation and the engineering-report draft (logged under `ai-documentation/`). The video is hers alone and is linked in the deliverables table (not verified by the assistant).
+- Still to do by Emma: review the report and cards, check that the video link opens for viewers who are not signed in, and confirm the "confidently wrong" wording with the instructor.
 
 ## Project tasks: who did what
 
@@ -144,10 +167,10 @@ Only what the repository or the user's reports record is stated. Anything not li
 | Tests, CI, live integration test, frozen-reference test | | Reports CI green and ran the live integration test from a local terminal (2 passed, 2026-10-28; user-reported) | Wrote the tests, workflows and helpers |
 | Model card, dataset card, README | | To review and finalize before submission | Drafted |
 | Individual engineering report | | Supplied the project evidence and the personal reflection; **review and approval pending** | Drafted the report from that material |
-| Individual video | | **Contributor's own; pending** | None |
+| Individual video | | **Contributor's own**; [link added](https://www.loom.com/share/2c4aebe3ddad42808a0758bc4bda2c57), not verified by the assistant | None |
 
 The exact split of authorship within the AI-assisted rows is for the contributor to state in their report; it is not asserted here.
 
 ## AI-assistance log
 
-AI (Claude Code) helped review requirements and draft code, tests and documentation in the sessions recorded under [`ai-documentation/`](ai-documentation/). A human must still review all AI-assisted content for accuracy before submission. AI assisted in drafting the engineering report (see [docs/engineering-report.md](docs/engineering-report.md)), which is not final until the contributor reviews it; it has not drafted the video.
+AI (Claude Code) helped review requirements and draft code, tests and documentation in the sessions recorded under [`ai-documentation/`](ai-documentation/). A human must still review all AI-assisted content for accuracy before submission. AI assisted in drafting the engineering report (see [docs/engineering-report.md](docs/engineering-report.md)), which is not final until the contributor reviews it; it did not draft the video.

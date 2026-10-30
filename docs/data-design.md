@@ -1,8 +1,10 @@
 # Seq Sight — Data Design and Forecasting Contract
 
-> **Status: proposed design.** Every *design choice* below (window sizes, split
-> ratios, cleanup rules, tables) is a team decision, not an assignment-mandated
-> setting, and none of it is implemented in application code.
+> **Status: design record; now implemented.** Every *design choice* below (window sizes, split
+> ratios, cleanup rules, tables) is the contributor's decision, not an assignment-mandated
+> setting. It is implemented in `shared/forecasting.py`, `db/load.py` and
+> `db/migrations/002_seq_sight_forecasting.sql`; wording below such as "proposed" or "planned" is
+> the original design language. Items still open are listed under Unresolved verification items.
 > **Dataset facts** (marked *Measured*) come from inspecting the downloaded files
 > on 2026-10-24; see the [dataset card](dataset-card.md) for evidence and for
 > what is source-documented vs. locally measured. Items still open are in
@@ -114,9 +116,9 @@ shape `[batch, 72, 72]`. It describes relationships among **input hours**. It is
 UI and reports should describe it as "where the model's attention weights were
 concentrated", not "why the temperature will be X".
 
-## Planned database responsibilities
+## Database responsibilities
 
-Table and column names are provisional.
+Implemented in `002_seq_sight_forecasting.sql`; see [supabase-setup.md](supabase-setup.md) for the exact columns.
 
 | Table | Responsibility |
 |-------|----------------|

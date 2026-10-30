@@ -1,8 +1,8 @@
-# Render deployment (prepared, NOT deployed, NOT tested on Render)
+# Render deployment (deployed; working state user-reported)
 
 Back to [README](../README.md) · See also [forecasting API](forecasting-api.md), [Streamlit UI](ui.md), [model card](../MODEL_CARD.md).
 
-> **Status.** Everything here is configuration and code that has only been exercised by offline tests with mocked Supabase. No Render service exists, nothing was deployed, and no live Supabase call was made for this work. The user has separately verified the Supabase schema, access permissions, corpus upload and split counts. Run registration, artifact download, serving and prediction logging remain untested against live Supabase. Treat every "will" below as a prediction.
+> **Status.** The service is deployed at <https://seq-sight-api.onrender.com> (user-confirmed). The user reports that run registration, artifact download from Supabase, serving and prediction logging work, and that the opt-in live integration test passed on 2026-10-28 (see [integration testing](integration-testing.md)). None of this was independently observed by the assistant, and cold-start wake time was not measured. Sections below that say "will" or "expected" describe the design; items marked unverified remain unverified.
 
 The `render.yaml` structure was adapted from the professor-provided *Attend-It* template; Seq Sight's configuration is our own. The Streamlit UI is a separate deployment and is not part of this service.
 
