@@ -72,7 +72,7 @@ not yet decided).
 
 ## Fair comparison
 
-The LSTM/GRU baseline and the self-attention model must use identical data,
+The LSTM baseline and the self-attention model must use identical data,
 windows, preprocessing, and evaluation. Only the model architecture differs.
 
 ## Data validity and cleanup rules

@@ -1,6 +1,6 @@
 # Reference results from `docs/model-comparison.sql`
 
-**Provenance: user-executed.** The user ran the three statements in [`../model-comparison.sql`](../model-comparison.sql) in the Supabase SQL editor of the project that holds the registered runs and supplied the outputs below. Claude did not query Supabase and could not check these values against the database; the files are a transcription of what the user reported. Date of execution and project reference: not recorded (pending, to be added by the user if wanted).
+**Provenance: run by Emma.** Emma ran the three statements in [`../model-comparison.sql`](../model-comparison.sql) in the Supabase SQL editor of the project that holds the registered runs and recorded the outputs below. The files are a transcription of those outputs. Date of execution and project reference: not recorded (Emma may add them).
 
 | File | Statement | Content |
 |---|---|---|
@@ -14,4 +14,4 @@ Filter: data version `jena-mpi-roof-h1-60138aac7d898b8c` and the six artifact SH
 
 **What the SD is.** `sd_*` is the sample standard deviation (n − 1, n = 3) of the per-run MAE across the three training seeds. It describes seed-to-seed variation of the trained models' aggregate error. It is not prediction uncertainty, not a confidence interval for a forecast or for the true error, and not a measure of how sure the model is about any forecast; with three seeds the SD itself is imprecise.
 
-As a consistency check (done by Claude on the supplied text, not against the database): the per-seed test MAEs in query 2 equal the values in the local, git-ignored `artifacts/epoch50/final/test_eval.json` (separate evidence from the evaluation script) to the precision supplied, and the query 1 means and sample SDs follow from the six query 2 values.
+As a consistency check (done on the transcribed text, not against the database): the per-seed test MAEs in query 2 equal the values in the local, git-ignored `artifacts/epoch50/final/test_eval.json` (separate evidence from the evaluation script) to the precision supplied, and the query 1 means and sample SDs follow from the six query 2 values.

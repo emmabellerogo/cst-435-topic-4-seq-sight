@@ -1,4 +1,4 @@
-> **Status: AI-assisted draft, not yet reviewed.** This report was drafted with AI assistance (Claude Code) from the contributor's project evidence and the contributor's personal worldview reflection. It is **not final** until the contributor has reviewed it for accuracy and confirmed that it expresses their own views. This note is not part of the report body or its word count. See the [README](../README.md).
+> **Status: AI-assisted; final human review pending.** This report was prepared with AI assistance from the project evidence and Emma's personal worldview reflection. It is **not final** until Emma has completed her final review for accuracy and confirmed that it expresses her own views. This note is not part of the report body or its word count. See the [README](../README.md).
 
 # CLC -Product 4: “Seq-Sight”: A Sequence-Modeling Service with Attention Explanations: Engineering Analysis and Reflection
 

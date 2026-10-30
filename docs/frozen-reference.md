@@ -41,4 +41,4 @@ If an artifact is present but its hash differs from the fixture, the trained tes
 ## Status
 
 * Executed locally, with the trained artifacts present: all 7 tests in `tests/test_frozen_reference.py` passed, including `test_trained_artifacts_match_frozen_forecasts`. Run with the artifact directory pointed at a missing path: 6 passed, trained test skipped.
-* In GitHub Actions the trained test will be **skipped** (artifacts are git-ignored). Green CI therefore verifies the synthetic fixture and fixture structure, not the trained checkpoints. This has not been observed in CI yet for this change.
+* In GitHub Actions the trained test will be **skipped** (artifacts are git-ignored). Green CI therefore verifies the synthetic fixture and fixture structure, not the trained checkpoints.

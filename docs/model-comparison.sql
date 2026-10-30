@@ -1,6 +1,6 @@
 -- Seq Sight: README model comparison from PERSISTED runs. READ-ONLY (select statements only).
 --
--- Not executed by Claude. The user ran it and supplied the outputs, stored in docs/results/ (see its README). To re-run, use the
+-- Emma ran it and recorded the outputs, stored in docs/results/ (see its README). To re-run, use the
 -- Supabase SQL editor (paste ONE statement at a time; the editor shows only the last result) or
 -- with psql. Fill the README table from what it returns.
 --

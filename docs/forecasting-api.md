@@ -68,7 +68,7 @@ Every forecast is written to `predictions` (input hash, forecast, attention, mod
 
 Prints, for the six `artifacts/epoch50/final` artifacts, the `runs` fields (hyperparameters, scaler, compute budget, validation MAE, artifact hash) and the size of the `run_artifacts` payload.
 
-`runs.test_mae_c` is `NOT NULL`, so `--execute` refuses to run without `--test-mae-file`, and without it the dry-run reports `test_mae_c=MISSING`. It never inserts zero, a validation figure or any placeholder. The final test evaluation has since been run (below), so the file now exists locally. The user reports that registration was executed and that persisted run metrics work in the deployed app; this was not observed from the repository.
+`runs.test_mae_c` is `NOT NULL`, so `--execute` refuses to run without `--test-mae-file`, and without it the dry-run reports `test_mae_c=MISSING`. It never inserts zero, a validation figure or any placeholder. The final test evaluation has since been run (below), so the file now exists locally. Emma recorded that registration was executed and that persisted run metrics work in the deployed app; this was not observed from the repository.
 
 ### Test evaluation (run once)
 
